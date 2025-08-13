@@ -20,6 +20,7 @@ import AddTagButtonComponent from "./Tag/AddTagButtonComponent";
 import TagEditorComponent from "./Tag/TagEditorComponent";
 import SwiftUIBridge from "../utils/bridge";
 import { HeadingNode } from "@lexical/rich-text";
+import { CustomLexicalComposerProvider } from "../utils/CustomLexicalComposerProvider";
 
 const theme = {
     paragraph: "leading-6 last:mb-0",
@@ -199,11 +200,13 @@ export default function LexicalEditor({
                             }
                             ErrorBoundary={LexicalErrorBoundary}
                         />
-                        <ImagesPlugin
-                            captionsEnabled={false}
-                            maxImages={maxImages}
-                            onImageCountChange={handleImageCountChange}
-                        />
+                        <CustomLexicalComposerProvider theme={theme}>
+                            <ImagesPlugin
+                                captionsEnabled={false}
+                                maxImages={maxImages}
+                                onImageCountChange={handleImageCountChange}
+                            />
+                        </CustomLexicalComposerProvider>
                         <AutoLinkPlugin matchers={MATCHERS} />
                         <HistoryPlugin />
                         <AutoFocusPlugin />
@@ -258,10 +261,12 @@ export default function LexicalEditor({
                     </div>
                     {isRichText && (
                         <div className="flex-shrink-0">
-                            <ToolbarPlugin
-                                imageCount={imageCount}
-                                canInsertImage={canInsertImage}
-                            />
+                            <CustomLexicalComposerProvider theme={theme}>
+                                <ToolbarPlugin
+                                    imageCount={imageCount}
+                                    canInsertImage={canInsertImage}
+                                />
+                            </CustomLexicalComposerProvider>
                         </div>
                     )}
                 </div>

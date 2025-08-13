@@ -25,7 +25,7 @@ export default defineConfig({
             "@lexical/react/LexicalRichTextPlugin",
             "@lexical/react/LexicalAutoFocusPlugin",
             "@lexical/react/LexicalOnChangePlugin",
-            "@lexical/react/useLexicalComposerContext",
+            // "@lexical/react/useLexicalComposerContext",
             "@lexical/html",
             "@lexical/utils",
         ],

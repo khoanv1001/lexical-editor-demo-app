@@ -1,4 +1,3 @@
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
 import {
     $createParagraphNode,
@@ -24,6 +23,7 @@ import { INSERT_IMAGE_COMMAND } from "../ImagePlugin";
 import DropDown, { DropDownItem } from "./DropDownComponent";
 import { $setBlocksType } from "@lexical/selection";
 import { $createHeadingNode, type HeadingTagType } from "@lexical/rich-text";
+import { useLexicalComposerContext } from "../../../../utils/context";
 
 interface ToolbarPluginProps {
     imageCount: number;

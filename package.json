@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "node --experimental-global-webcrypto node_modules/.bin/vite",
+        "dev": "node_modules/.bin/vite",
         "transform": "vite --debug transform",
         "build": "tsc -b && vite build",
         "lint": "eslint .",

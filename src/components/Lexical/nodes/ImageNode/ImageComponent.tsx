@@ -1,16 +1,6 @@
-import {
-    Suspense,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-    type JSX,
-} from "react";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
 import { mergeRegister } from "@lexical/utils";
-import { IconContext } from "react-icons";
-import { FaTrashAlt } from "react-icons/fa";
+import clsx from "clsx";
 import type {
     BaseSelection,
     LexicalEditor,
@@ -19,9 +9,9 @@ import type {
     RangeSelection,
 } from "lexical";
 import {
-    $getRoot,
     $createParagraphNode,
     $getNodeByKey,
+    $getRoot,
     $getSelection,
     $isNodeSelection,
     $setSelection,
@@ -33,8 +23,18 @@ import {
     KEY_ESCAPE_COMMAND,
     SELECTION_CHANGE_COMMAND,
 } from "lexical";
-import clsx from "clsx";
+import {
+    Suspense,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type JSX,
+} from "react";
+import { IconContext } from "react-icons";
+import { FaTrashAlt } from "react-icons/fa";
 import { $isImageNode } from ".";
+import { useLexicalComposerContext } from "../../../../utils/context";
 
 function LazyImage({
     altText,

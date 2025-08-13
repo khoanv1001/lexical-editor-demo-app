@@ -1,5 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isAtNodeEnd } from "@lexical/selection";
 import { $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
 import {
@@ -26,6 +25,7 @@ import {
     $isImageNode,
     ImageNode,
 } from "../../nodes/ImageNode";
+import { useLexicalComposerContext } from "../../../../utils/context";
 
 export const ImageMaxLength = 100;
 
