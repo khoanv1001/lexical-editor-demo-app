@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface AddTagButtonProps {
     onClick?: () => void;
@@ -6,15 +6,15 @@ interface AddTagButtonProps {
     className?: string;
 }
 
-const AddTagButtonComponent: React.FC<AddTagButtonProps> = ({ 
-    onClick, 
-    children = "+ Add Tag",
-    className = ""
+const AddTagButtonComponent: React.FC<AddTagButtonProps> = ({
+    onClick,
+    children = "+ タグを追加",
+    className = "",
 }) => {
     return (
         <button
             onClick={onClick}
-            className={`px-4 py-2 bg-white border-2 border-blue-500 text-blue-500 rounded-full hover:bg-blue-50 transition-colors duration-200 ${className}`}
+            className={`px-3 py-1 bg-white border-2 text-xs border-blue-500 text-blue-500 rounded-lg transition-colors duration-200 ${className}`}
         >
             {children}
         </button>

@@ -1,393 +1,271 @@
-import { $createParagraphNode, $getRoot, $getSelection, $isRangeSelection, COMMAND_PRIORITY_LOW, FORMAT_TEXT_COMMAND, SELECTION_CHANGE_COMMAND } from 'lexical';
-import { $generateHtmlFromNodes } from '@lexical/html';
-import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
-import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import { ContentEditable } from '@lexical/react/LexicalContentEditable';
-import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
-import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
-import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
-import { useState, useCallback, useEffect } from 'react';
-import {mergeRegister} from '@lexical/utils';
-import ImagesPlugin, { INSERT_IMAGE_COMMAND } from './Lexical/plugins/ImagePlugin';
-import { ImageNode } from './Lexical/nodes/ImageNode';
-import SwiftUIBridge from '../utils/bridge';
-import { AutoLinkPlugin, createLinkMatcherWithRegExp } from '@lexical/react/LexicalAutoLinkPlugin';
-import {AutoLinkNode} from '@lexical/link';
-import AddTagButtonComponent from './Tag/AddTagButtonComponent';
-import TagEditorComponent from './Tag/TagEditorComponent';
+import { AutoLinkNode } from "@lexical/link";
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import {
+    AutoLinkPlugin,
+    createLinkMatcherWithRegExp,
+} from "@lexical/react/LexicalAutoLinkPlugin";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { Chip } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import { LuBookText } from "react-icons/lu";
+import { TiArrowSortedDown } from "react-icons/ti";
+import { ImageNode } from "./Lexical/nodes/ImageNode";
+import ImagesPlugin from "./Lexical/plugins/ImagePlugin";
+import ToolbarPlugin from "./Lexical/plugins/ToolbarPlugin";
+import AddTagButtonComponent from "./Tag/AddTagButtonComponent";
+import TagEditorComponent from "./Tag/TagEditorComponent";
+import SwiftUIBridge from "../utils/bridge";
+import { HeadingNode } from "@lexical/rich-text";
 
 const theme = {
-  paragraph: 'mb-4 leading-6 last:mb-0',
-  text: {
-    bold: 'font-bold',
-    italic: 'italic',
-    underline: 'underline',
-  },
+    paragraph: "leading-6 last:mb-0",
+    text: {
+        bold: "font-bold",
+        italic: "italic",
+        underline: "underline",
+        strikethrough: "line-through",
+    },
+    heading: {
+        h1: "font-bold text-2xl",
+    },
 };
 
 function onError(error: Error) {
-  console.error(error);
-}
-
-function ToolbarPlugin({ 
-  imageCount, 
-  canInsertImage 
-}: { 
-  imageCount: number; 
-  canInsertImage: boolean; 
-}) {
-  const [editor] = useLexicalComposerContext();
-  const [isBold, setIsBold] = useState(false);
-
-  const $updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      setIsBold(selection.hasFormat('bold'));
-    }
-  }, []);
-
-  useEffect(() => {
-    // Setup listener for messages from SwiftUI
-    SwiftUIBridge.onMessage((data) => {
-      SwiftUIBridge.postMessage(`Received from SwiftUI: ${data}`);
-    });
-
-    // Send message to SwiftUI
-    SwiftUIBridge.postMessage({ type: "INIT", payload: { message: "hello" } });
-  }, []);
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
-        editorState.read(() => {
-          $updateToolbar();
-        });
-      }),
-      editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        () => {
-          $updateToolbar();
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  }, [editor, $updateToolbar]);
-
-  return (
-    <div className="flex items-center justify-start gap-2 p-3 bg-gray-50 rounded-t-lg border-b border-gray-200 overflow-x-auto overscroll-x-contain
-                     dark:bg-gray-800 dark:border-gray-600 
-                     max-sm:p-2 max-sm:gap-1.5 
-                     select-none scroll-smooth
-                     pl-safe-or-3 pr-safe-or-3">
-      <button
-        className="flex items-center justify-center min-w-11 h-11 px-3 py-2 bg-white border border-gray-300 rounded-lg text-base font-medium text-gray-700 cursor-pointer transition-all duration-200 ease-in-out select-none touch-manipulation
-                   hover:bg-gray-100 hover:border-gray-400 
-                   active:bg-gray-200 active:scale-95 
-                   focus:outline-2 focus:outline-blue-500 focus:outline-offset-2
-                   dark:bg-gray-700 dark:border-gray-500 dark:text-white dark:hover:bg-gray-600 dark:hover:border-gray-400 dark:active:bg-gray-500
-                   max-sm:min-w-10 max-sm:h-10 max-sm:px-2.5 max-sm:py-1.5 max-sm:text-sm"
-        onClick={() => {
-          editor.update(() => {
-            const root = $getRoot();
-            root.clear();
-            const paragraph = $createParagraphNode();
-            root.append(paragraph);
-            paragraph.select();
-          });
-        }}
-        type="button"
-        aria-label="Clear"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-      >
-        Clear
-      </button>
-      <button
-        onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-        }}
-        className={`flex items-center justify-center min-w-11 h-11 px-3 py-2 border rounded-lg text-base font-medium cursor-pointer transition-all duration-200 ease-in-out select-none touch-manipulation
-                   focus:outline-2 focus:outline-blue-500 focus:outline-offset-2
-                   max-sm:min-w-10 max-sm:h-10 max-sm:px-2.5 max-sm:py-1.5 max-sm:text-sm
-                   ${isBold 
-                     ? 'bg-blue-500 text-white border-blue-500 dark:bg-blue-500 dark:border-blue-500' 
-                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:bg-gray-200 active:scale-95 dark:bg-gray-700 dark:border-gray-500 dark:text-white dark:hover:bg-gray-600 dark:hover:border-gray-400 dark:active:bg-gray-500'
-                   }`}
-        aria-label="Format Bold"
-        type="button"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-      >
-        <strong>B</strong>
-      </button>
-      <ImagePicker 
-        canInsertImage={canInsertImage}
-        imageCount={imageCount}
-      />
-    </div>
-  );
-}
-
-// Plugin to handle content changes
-function OnChangeContentPlugin({ onChange }: { onChange: (html: string) => void }) {
-  const [editor] = useLexicalComposerContext();
-
-  return (
-    <OnChangePlugin
-      onChange={() => {
-        editor.update(() => {
-          const html = $generateHtmlFromNodes(editor, null);
-          onChange(html);
-        });
-      }}
-    />
-  );
-}
-
-function ImagePicker({ 
-  canInsertImage,
-  imageCount
-}: { 
-  canInsertImage: boolean;
-  imageCount: number;
-}) {
-  const [editor] = useLexicalComposerContext();
-
-  const loadImage = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    const filesToProcess = Array.from(files);
-    const availableSlots = Math.min(filesToProcess.length, 2 - imageCount);
-
-    if (availableSlots <= 0) {
-      alert(`Maximum of 2 images allowed. Current count: ${imageCount}`);
-      return;
-    }
-
-    if (filesToProcess.length > availableSlots) {
-      alert(`Can only insert ${availableSlots} more image(s). Current count: ${imageCount}/2`);
-    }
-
-    // Process only the files that fit within the limit
-    filesToProcess.slice(0, availableSlots).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = function () {
-        if (typeof reader.result === 'string') {
-          editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-            src: reader.result,
-            altText: 'Uploaded Image',
-            maxWidth: 600,
-            showCaption: false,
-            captionsEnabled: false,
-          });
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  return (
-    <div>
-      <input
-        id="file-input"
-        type="file"
-        accept="image/*"
-        capture={false}
-        multiple={false}
-        style={{ display: 'none' }}
-        onChange={(e) => loadImage(e.target.files)}
-      />
-      <button 
-        type="button" 
-        onClick={() => {
-          if (canInsertImage) {
-            document.getElementById('file-input')?.click();
-          } else {
-            alert(`Maximum of 2 images allowed. Current count: ${imageCount}`);
-          }
-        }}
-        disabled={!canInsertImage}
-        className={`flex items-center justify-center min-w-11 h-11 px-3 py-2 border rounded-lg text-base font-medium cursor-pointer transition-all duration-200 ease-in-out select-none touch-manipulation
-                   focus:outline-2 focus:outline-blue-500 focus:outline-offset-2
-                   max-sm:min-w-10 max-sm:h-10 max-sm:px-2.5 max-sm:py-1.5 max-sm:text-sm
-                   ${!canInsertImage 
-                     ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-60 hover:bg-gray-50 hover:border-gray-200 hover:transform-none dark:bg-gray-800 dark:text-gray-500 dark:border-gray-600' 
-                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:bg-gray-200 active:scale-95 dark:bg-gray-700 dark:border-gray-500 dark:text-white dark:hover:bg-gray-600 dark:hover:border-gray-400 dark:active:bg-gray-500'
-                   }`}
-        title={!canInsertImage ? `Maximum images reached (${imageCount}/2)` : 'Add photo'}
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-      >
-        Photo
-      </button>
-    </div>
-  );
+    console.error(error);
 }
 
 export interface LexicalEditorProps {
-  placeholder?: string;
-  onContentChange?: (html: string) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  initialContent?: string;
-  isRichText?: boolean;
+    placeholder?: string;
+    onContentChange?: (html: string) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
+    initialContent?: string;
+    isRichText?: boolean;
 }
 
 export default function LexicalEditor({
-  placeholder = "Start typing...",
-  onContentChange,
-  onFocus,
-  onBlur,
-  initialContent = "",
-  isRichText = true,
-  maxImages = 2
+    placeholder = "Start typing...",
+    // onContentChange,
+    onFocus,
+    onBlur,
+    initialContent = "",
+    isRichText = true,
+    maxImages = 2,
 }: LexicalEditorProps & { maxImages?: number }) {
-  const [imageCount, setImageCount] = useState(0);
-  const [canInsertImage, setCanInsertImage] = useState(true);
-  const [isShowingTagEditor, setIsShowingTagEditor] = useState(false);
+    const [imageCount, setImageCount] = useState(0);
+    const [canInsertImage, setCanInsertImage] = useState(true);
+    const [isShowingTagEditor, setIsShowingTagEditor] = useState(false);
+    const [tags, setTags] = useState<string[]>([]);
 
-  const handleImageCountChange = useCallback((count: number, canInsert: boolean) => {
-    setImageCount(count);
-    setCanInsertImage(canInsert);
-  }, []);
+    useEffect(() => {
+        // Setup listener for messages from SwiftUI
+        SwiftUIBridge.onMessage((data) => {
+            SwiftUIBridge.postMessage(`Received from SwiftUI: ${data}`);
+        });
+    }, []);
 
-  const initialConfig = {
-    namespace: 'MobileEditor',
-    theme,
-    onError,
-    nodes: [
-      ImageNode,
-      AutoLinkNode
-    ],
-    editorState: initialContent ? JSON.stringify({
-      root: {
-        children: [
-          {
-            children: [
-              {
-                detail: 0,
-                format: 0,
-                mode: "normal",
-                style: "",
-                text: initialContent,
-                type: "text",
-                version: 1
-              }
-            ],
-            direction: "ltr",
-            format: "",
-            indent: 0,
-            type: "paragraph",
-            version: 1
-          }
-        ],
-        direction: "ltr",
-        format: "",
-        indent: 0,
-        type: "root",
-        version: 1
-      }
-    }) : undefined
-  };
+    const handleImageCountChange = useCallback(
+        (count: number, canInsert: boolean) => {
+            setImageCount(count);
+            setCanInsertImage(canInsert);
+        },
+        []
+    );
 
-  const handleContentChange = (html: string) => {
-    onContentChange?.(html);
-  };
+    const closeEditor = () => {
+        SwiftUIBridge.postMessage({
+            type: "CMD_CLOSE_EDITOR",
+        });
+    };
 
-  const URL_REGEX =
-    /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)(?<![-.+():%])/;
+    const openBookSheet = () => {
+        SwiftUIBridge.postMessage({
+            type: "CMD_OPEN_BOOK_SHEET",
+        });
+    };
 
-  const MATCHERS = [
-    createLinkMatcherWithRegExp(URL_REGEX, (text) => {
-      return text.startsWith("http") ? text : `https://${text}`;
-    })
-  ];
+    const handleTagsChange = useCallback((newTags: string[]) => {
+        setTags(newTags);
+    }, []);
 
-  return (
-    <div className="w-full max-w-full m-0 p-2 box-border font-sans bg-white rounded-xl shadow-md
-                     dark:bg-gray-800 dark:text-white
-                     max-sm:p-1 max-sm:rounded-lg
-                     pl-safe-or-2 pr-safe-or-2
-                     focus-within:shadow-lg focus-within:ring-2 focus-within:ring-blue-300 focus-within:ring-opacity-50">
-      <LexicalComposer initialConfig={initialConfig}>
-        <div className="relative bg-white rounded-b-lg min-h-50
-                        dark:bg-gray-800
-                        max-sm:rounded-b-md">
-          {isRichText ? (
-            <RichTextPlugin
-              contentEditable={
-                <ContentEditable 
-                  className="min-h-50 p-5 text-base leading-6 text-gray-800 bg-transparent border-none outline-none resize-none caret-blue-500 select-text break-words
-                             dark:text-white
-                             max-sm:p-4 max-sm:min-h-38"
-                  aria-placeholder={placeholder}
-                  placeholder={
-                    <div className="absolute top-5 left-5 right-5 text-gray-500 text-base leading-6 pointer-events-none select-none opacity-70
-                                     dark:text-gray-400
-                                     max-sm:top-4 max-sm:left-4 max-sm:right-4">{placeholder}</div>
-                  }
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  style={{ 
-                    fontSize: '16px', // Prevents zoom on iOS
-                    WebkitUserSelect: 'text',
-                    userSelect: 'text',
-                    overflowWrap: 'break-word',
-                    wordWrap: 'break-word'
-                  }}
-                />
-              }
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-          ) : (
-            <PlainTextPlugin
-              contentEditable={
-                <ContentEditable 
-                  className="min-h-50 p-5 text-base leading-6 text-gray-800 bg-transparent border-none outline-none resize-none caret-blue-500 select-text break-words
-                             dark:text-white
-                             max-sm:p-4 max-sm:min-h-38"
-                  aria-placeholder={placeholder}
-                  placeholder={
-                    <div className="absolute top-5 left-5 right-5 text-gray-500 text-base leading-6 pointer-events-none select-none opacity-70
-                                     dark:text-gray-400
-                                     max-sm:top-4 max-sm:left-4 max-sm:right-4">{placeholder}</div>
-                  }
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  style={{ 
-                    fontSize: '16px', // Prevents zoom on iOS
-                    WebkitUserSelect: 'text',
-                    userSelect: 'text',
-                    overflowWrap: 'break-word',
-                    wordWrap: 'break-word'
-                  }}
-                />
-              }
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-          )}
-          <ImagesPlugin 
-            captionsEnabled={false} 
-            maxImages={maxImages}
-            onImageCountChange={handleImageCountChange}
-          />
-          <AutoLinkPlugin matchers={MATCHERS} />
-          <HistoryPlugin />
-          <AutoFocusPlugin />
-          <OnChangeContentPlugin onChange={handleContentChange} />
+    const initialConfig = {
+        namespace: "MobileEditor",
+        theme,
+        onError,
+        nodes: [ImageNode, AutoLinkNode, HeadingNode],
+        editorState: initialContent
+            ? JSON.stringify({
+                  root: {
+                      children: [
+                          {
+                              children: [
+                                  {
+                                      detail: 0,
+                                      format: 0,
+                                      mode: "normal",
+                                      style: "",
+                                      text: initialContent,
+                                      type: "text",
+                                      version: 1,
+                                  },
+                              ],
+                              direction: "ltr",
+                              format: "",
+                              indent: 0,
+                              type: "paragraph",
+                              version: 1,
+                          },
+                      ],
+                      direction: "ltr",
+                      format: "",
+                      indent: 0,
+                      type: "root",
+                      version: 1,
+                  },
+              })
+            : undefined,
+    };
+
+    const URL_REGEX =
+        /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)(?<![-.+():%])/;
+
+    const MATCHERS = [
+        createLinkMatcherWithRegExp(URL_REGEX, (text) => {
+            return text.startsWith("http") ? text : `https://${text}`;
+        }),
+    ];
+
+    return (
+        <div className="w-full h-full m-0 p-2 pb-0 box-border bg-white flex flex-col pl-safe-or-2 pr-safe-or-2 overflow-hidden">
+            <div className="flex w-full justify-between items-end p-4 py-2 text-sm flex-shrink-0">
+                <button
+                    onClick={closeEditor}
+                    className="text-gray-600 border-none pl-0 font-bold"
+                >
+                    キャンセル
+                </button>
+                <button
+                    onClick={closeEditor}
+                    className="px-2 py-2 text-white min-w-20 border font-bold text-sm rounded-xl bg-button-primary-background"
+                >
+                    投稿
+                </button>
+            </div>
+            <div className="p-4 text-lg flex items-center flex-shrink-0">
+                <button
+                    onClick={openBookSheet}
+                    className="px-4 py-3 text-xs flex justify-center border items-center rounded-xl border-border-default gap-2"
+                >
+                    <LuBookText size={16} />
+                    日々のこと
+                    <TiArrowSortedDown />
+                </button>
+            </div>
+            <LexicalComposer initialConfig={initialConfig}>
+                <div className="flex flex-col h-full w-full min-h-0">
+                    <div className="relative flex-1 w-full bg-white overflow-y-auto">
+                        <RichTextPlugin
+                            contentEditable={
+                                <div className="flex flex-col p-4">
+                                    <input
+                                        className="w-full pb-3 border-none outline-none text-lg font-bold text-gray-500"
+                                        type="text"
+                                        placeholder="タイトル"
+                                        onChange={() => {}}
+                                    />
+                                    <ContentEditable
+                                        className="w-full text-base leading-6 text-gray-800 bg-transparent border-none outline-none resize-none select-text break-words min-h-100"
+                                        aria-placeholder={placeholder}
+                                        placeholder={
+                                            <div className="absolute top-14 text-gray-500 text-base leading-6 pointer-events-none select-none opacity-70">
+                                                {placeholder}
+                                            </div>
+                                        }
+                                        onFocus={onFocus}
+                                        onBlur={onBlur}
+                                        style={{
+                                            fontSize: "16px",
+                                            WebkitUserSelect: "text",
+                                            userSelect: "text",
+                                            overflowWrap: "break-word",
+                                            wordWrap: "break-word",
+                                        }}
+                                    />
+                                </div>
+                            }
+                            ErrorBoundary={LexicalErrorBoundary}
+                        />
+                        <ImagesPlugin
+                            captionsEnabled={false}
+                            maxImages={maxImages}
+                            onImageCountChange={handleImageCountChange}
+                        />
+                        <AutoLinkPlugin matchers={MATCHERS} />
+                        <HistoryPlugin />
+                        <AutoFocusPlugin />
+                    </div>
+                    <div className="flex w-full flex-shrink-0">
+                        {tags.length == 0 ? (
+                            <AddTagButtonComponent
+                                onClick={() => setIsShowingTagEditor(true)}
+                                className="ml-auto mb-1 mt-1"
+                            />
+                        ) : (
+                            <div className="w-full mb-1 mt-1 overflow-hidden">
+                                <div
+                                    className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 px-1"
+                                    style={{
+                                        scrollbarWidth: "none",
+                                        msOverflowStyle: "none",
+                                        WebkitOverflowScrolling: "touch",
+                                    }}
+                                >
+                                    {tags.map((tag, index) => (
+                                        <Chip
+                                            key={`${tag}-${index}`}
+                                            label={`#${tag}`}
+                                            onClick={() =>
+                                                setIsShowingTagEditor(true)
+                                            }
+                                            variant="outlined"
+                                            size="small"
+                                            color="primary"
+                                            sx={{
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                padding: "8px 10px",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                                borderRadius: "8px",
+                                                border: "1px solid #0092F1",
+                                                background: "#FFF",
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <TagEditorComponent
+                            isShowing={isShowingTagEditor}
+                            initialTags={tags}
+                            onClose={() => setIsShowingTagEditor(false)}
+                            onTagsChange={handleTagsChange}
+                        />
+                    </div>
+                    {isRichText && (
+                        <div className="flex-shrink-0">
+                            <ToolbarPlugin
+                                imageCount={imageCount}
+                                canInsertImage={canInsertImage}
+                            />
+                        </div>
+                    )}
+                </div>
+            </LexicalComposer>
         </div>
-        <div className="flex">
-          <AddTagButtonComponent onClick={() => setIsShowingTagEditor(true)} className="ml-auto mb-1 mt-1" />
-          {isShowingTagEditor && (
-            <TagEditorComponent
-              isShowing={isShowingTagEditor}
-              onClose={() => setIsShowingTagEditor(false)}
-            />
-          )}
-        </div>
-        {isRichText && <ToolbarPlugin imageCount={imageCount} canInsertImage={canInsertImage} />}
-      </LexicalComposer>
-    </div>
-  );
+    );
 }
