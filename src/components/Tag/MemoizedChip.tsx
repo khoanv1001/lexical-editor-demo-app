@@ -23,42 +23,60 @@ const MemoizedChip = memo<MemoizedChipProps>(
         onToggleSelection,
         onDelete,
     }) => {
-        const handleClick = useCallback(() => {
-            onToggleSelection(index);
-        }, [onToggleSelection, index]);
+        const handleClick = useCallback(
+            (event: React.MouseEvent) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleSelection(index);
+            },
+            [onToggleSelection, index]
+        );
 
-        const handleDelete = useCallback(() => {
-            onDelete(index);
-        }, [onDelete, index]);
+        const handleDelete = useCallback(
+            (event?: React.MouseEvent) => {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                onDelete(index);
+            },
+            [onDelete, index]
+        );
+
+        // iOS-specific touch handlers
+        const handleTouchStart = useCallback((event: React.TouchEvent) => {
+            event.stopPropagation();
+        }, []);
+
+        const handleTouchEnd = useCallback(
+            (event: React.TouchEvent) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!disabled) {
+                    onToggleSelection(index);
+                }
+            },
+            [onToggleSelection, index, disabled]
+        );
 
         return (
             <Chip
-                label={`#${chip}`}
+                label={`# ${chip}`}
                 onClick={disabled ? undefined : handleClick}
+                onTouchStart={disabled ? undefined : handleTouchStart}
+                onTouchEnd={disabled ? undefined : handleTouchEnd}
                 onDelete={disabled || !isSelected ? undefined : handleDelete}
                 color={color}
                 size={size}
                 variant={isSelected ? "filled" : "outlined"}
-                sx={{
-                    cursor: disabled ? "default" : "pointer",
-                    flexShrink: 0,
-                    whiteSpace: "nowrap",
-                    transition: "all 0.3s ease-in-out",
-                    "&:hover": {
-                        backgroundColor: "rgba(25, 118, 210, 0.04)",
-                        transform: "scale(1.02)",
-                    },
-                    "&:active": {
-                        transform: "scale(0.98)",
-                    },
-                    display: "flex",
-                    padding: "8px 10px",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderRadius: "8px",
-                    border: "1px solid #0092F1",
-                    background: "#FFF",
-                }}
+                className={`
+                    ${disabled ? "cursor-default" : "cursor-pointer"}
+                    flex-shrink-0 whitespace-nowrap
+                    ${!disabled ? "active:scale-95" : ""}
+                    flex items-center justify-center
+                    px-2.5 py-2 rounded-lg border border-tag-active text-tag-active
+                    ${isSelected ? "bg-tag-delete border-0 " : ""}
+                `}
             />
         );
     }

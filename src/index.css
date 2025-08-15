@@ -5,6 +5,8 @@
     --color-border-default: #e5e5e5;
     --color-button-primary-background: #1c1c1c;
     --color-text-sub: #888888;
+    --color-tag-active: #0092f1;
+    --color-tag-delete: #d9effd;
 }
 
 @layer base {
@@ -99,9 +101,26 @@
 }
 
 @layer utilities {
+    /* Custom tag color utilities */
+    .bg-tag-active {
+        background-color: var(--color-tag-active);
+    }
+
+    .bg-tag-delete {
+        background-color: var(--color-tag-delete);
+    }
+
+    .border-tag-active {
+        border-color: var(--color-tag-active);
+    }
+
+    .text-tag-active {
+        color: var(--color-tag-active);
+    }
+
     /* Dark mode styles */
     @media (prefers-color-scheme: dark) {
-        :root {
+        /* :root {
             color: #ffffff;
             background-color: #000000;
         }
@@ -116,7 +135,7 @@
 
         button {
             @apply bg-gray-800 border-gray-600 text-white;
-        }
+        } */
     }
 
     /* Handle notch and safe areas */

@@ -51,7 +51,6 @@ export interface LexicalEditorProps {
 export default function LexicalEditor({
     placeholder = "Start typing...",
     // onContentChange,
-    onFocus,
     onBlur,
     initialContent = "",
     isRichText = true,
@@ -167,109 +166,110 @@ export default function LexicalEditor({
                 </button>
             </div>
             <LexicalComposer initialConfig={initialConfig}>
-                <div className="flex flex-col h-full w-full min-h-0">
-                    <div className="relative flex-1 w-full bg-white overflow-y-auto">
-                        <RichTextPlugin
-                            contentEditable={
-                                <div className="flex flex-col p-4">
-                                    <input
-                                        className="w-full pb-3 border-none outline-none text-lg font-bold text-gray-500"
-                                        type="text"
-                                        placeholder="タイトル"
-                                        onChange={() => {}}
-                                    />
-                                    <ContentEditable
-                                        className="w-full text-base leading-6 text-gray-800 bg-transparent border-none outline-none resize-none select-text break-words min-h-100"
-                                        aria-placeholder={placeholder}
-                                        placeholder={
-                                            <div className="absolute top-14 text-gray-500 text-base leading-6 pointer-events-none select-none opacity-70">
-                                                {placeholder}
-                                            </div>
-                                        }
-                                        onFocus={onFocus}
-                                        onBlur={onBlur}
-                                        style={{
-                                            fontSize: "16px",
-                                            WebkitUserSelect: "text",
-                                            userSelect: "text",
-                                            overflowWrap: "break-word",
-                                            wordWrap: "break-word",
-                                        }}
-                                    />
-                                </div>
-                            }
-                            ErrorBoundary={LexicalErrorBoundary}
-                        />
-                        <CustomLexicalComposerProvider theme={theme}>
+                <CustomLexicalComposerProvider theme={theme}>
+                    <div className="flex flex-col h-full w-full min-h-0">
+                        <div className="relative flex-1 w-full bg-white overflow-y-auto">
+                            <RichTextPlugin
+                                contentEditable={
+                                    <div className="flex flex-col p-4">
+                                        <input
+                                            className="w-full pb-3 border-none outline-none text-lg font-bold text-gray-500"
+                                            type="text"
+                                            placeholder="タイトル"
+                                            onChange={() => {}}
+                                        />
+                                        <ContentEditable
+                                            className="w-full text-base leading-6 text-gray-800 bg-transparent border-none outline-none resize-none select-text break-words"
+                                            aria-placeholder={placeholder}
+                                            placeholder={
+                                                <div className="absolute top-14 text-gray-500 text-base leading-6 pointer-events-none select-none opacity-70">
+                                                    {placeholder}
+                                                </div>
+                                            }
+                                            onFocus={() => {
+                                                window.scrollTo(0, 0);
+                                            }}
+                                            onBlur={onBlur}
+                                            style={{
+                                                fontSize: "16px",
+                                                WebkitUserSelect: "text",
+                                                userSelect: "text",
+                                                overflowWrap: "break-word",
+                                                wordWrap: "break-word",
+                                            }}
+                                        />
+                                    </div>
+                                }
+                                ErrorBoundary={LexicalErrorBoundary}
+                            />
                             <ImagesPlugin
                                 captionsEnabled={false}
                                 maxImages={maxImages}
                                 onImageCountChange={handleImageCountChange}
                             />
-                        </CustomLexicalComposerProvider>
-                        <AutoLinkPlugin matchers={MATCHERS} />
-                        <HistoryPlugin />
-                        <AutoFocusPlugin />
-                    </div>
-                    <div className="flex w-full flex-shrink-0">
-                        {tags.length == 0 ? (
-                            <AddTagButtonComponent
-                                onClick={() => setIsShowingTagEditor(true)}
-                                className="ml-auto mb-1 mt-1"
-                            />
-                        ) : (
-                            <div className="w-full mb-1 mt-1 overflow-hidden">
-                                <div
-                                    className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 px-1"
-                                    style={{
-                                        scrollbarWidth: "none",
-                                        msOverflowStyle: "none",
-                                        WebkitOverflowScrolling: "touch",
-                                    }}
-                                >
-                                    {tags.map((tag, index) => (
-                                        <Chip
-                                            key={`${tag}-${index}`}
-                                            label={`#${tag}`}
-                                            onClick={() =>
-                                                setIsShowingTagEditor(true)
-                                            }
-                                            variant="outlined"
-                                            size="small"
-                                            color="primary"
-                                            sx={{
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                padding: "8px 10px",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                borderRadius: "8px",
-                                                border: "1px solid #0092F1",
-                                                background: "#FFF",
-                                            }}
-                                        />
-                                    ))}
+                            <AutoLinkPlugin matchers={MATCHERS} />
+                            <HistoryPlugin />
+                            <AutoFocusPlugin />
+                        </div>
+                        <div className="flex w-full flex-shrink-0">
+                            {tags.length == 0 ? (
+                                <AddTagButtonComponent
+                                    onClick={() => setIsShowingTagEditor(true)}
+                                    className="ml-auto mb-1 mt-1"
+                                />
+                            ) : (
+                                <div className="w-full mb-1 mt-1 overflow-hidden">
+                                    <div
+                                        className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 px-1"
+                                        style={{
+                                            scrollbarWidth: "none",
+                                            msOverflowStyle: "none",
+                                            WebkitOverflowScrolling: "touch",
+                                        }}
+                                    >
+                                        {tags.map((tag, index) => (
+                                            <Chip
+                                                className="cursor-pointer flex-shrink-0 whitespace-nowrap flex items-center justify-center px-2.5 py-2 rounded-lg border border-tag-active text-tag-active"
+                                                key={`${tag}-${index}`}
+                                                label={`#${tag}`}
+                                                onClick={() =>
+                                                    setIsShowingTagEditor(true)
+                                                }
+                                                variant="outlined"
+                                                size="small"
+                                                color="primary"
+                                                sx={{
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    padding: "8px 10px",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid #0092F1",
+                                                    background: "#FFF",
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                        <TagEditorComponent
-                            isShowing={isShowingTagEditor}
-                            initialTags={tags}
-                            onClose={() => setIsShowingTagEditor(false)}
-                            onTagsChange={handleTagsChange}
-                        />
-                    </div>
-                    {isRichText && (
-                        <div className="flex-shrink-0">
-                            <CustomLexicalComposerProvider theme={theme}>
+                            )}
+                            <TagEditorComponent
+                                isShowing={isShowingTagEditor}
+                                initialTags={tags}
+                                onClose={() => setIsShowingTagEditor(false)}
+                                onTagsChange={handleTagsChange}
+                            />
+                        </div>
+                        {isRichText && (
+                            <div className="flex-shrink-0">
                                 <ToolbarPlugin
                                     imageCount={imageCount}
                                     canInsertImage={canInsertImage}
                                 />
-                            </CustomLexicalComposerProvider>
-                        </div>
-                    )}
-                </div>
+                            </div>
+                        )}
+                    </div>
+                </CustomLexicalComposerProvider>
             </LexicalComposer>
         </div>
     );

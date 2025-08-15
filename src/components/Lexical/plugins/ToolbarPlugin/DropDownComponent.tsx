@@ -40,16 +40,41 @@ export function DropDownItem({
         }
     }, [registerItem]);
 
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        // Prevent focus loss from editor
+        event.preventDefault();
+        event.stopPropagation();
+        onClick(event);
+    };
+
+    const handleMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
+        // Prevent the button from taking focus away from editor
+        event.preventDefault();
+    };
+
+    const handleTouchStart = (event: React.TouchEvent<HTMLButtonElement>) => {
+        // Prevent focus loss on touch devices
+        event.preventDefault();
+    };
+
     return (
         <button
             ref={ref}
-            onClick={onClick}
+            onClick={handleClick}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
             type="button"
-            className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors focus:outline-none ${
+            tabIndex={-1} // Remove from tab order to prevent focus
+            className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded transition-colors ${
                 isActive
                     ? "bg-blue-100 text-blue-800 border border-blue-200"
-                    : "text-gray-700 hover:bg-gray-100 border border-transparent"
+                    : "text-gray-700 hover:bg-gray-100 border border-transparent active:bg-gray-200"
             }`}
+            style={{
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+                WebkitTouchCallout: "none",
+            }}
         >
             <span className="text-left">{children}</span>
             {icon && <span className="ml-2">{icon}</span>}
@@ -100,18 +125,20 @@ function DropDownItems({
                 if (!prev) return items[0];
                 return items[items.indexOf(prev) + 1] || items[0];
             });
+        } else if (key === "Enter" && highlightedItem?.current) {
+            event.preventDefault();
+            highlightedItem.current.click();
         }
     };
 
     const contextValue = useMemo(() => ({ registerItem }), [registerItem]);
 
+    // Don't auto-focus items to prevent editor focus loss
     useEffect(() => {
         if (items.length && !highlightedItem) {
             setHighlightedItem(items[0]);
         }
-        if (highlightedItem?.current) {
-            highlightedItem.current.focus();
-        }
+        // Removed auto-focus to prevent editor focus loss
     }, [items, highlightedItem]);
 
     return (
@@ -123,6 +150,7 @@ function DropDownItems({
                 style={{
                     width: "257px",
                 }}
+                tabIndex={-1} // Prevent container from taking focus
             >
                 {children}
             </div>
@@ -146,6 +174,22 @@ export default function DropDown({
 
     const handleClose = () => {
         setShowDropDown(false);
+    };
+
+    const handleToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowDropDown((prev) => !prev);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+        // Prevent the trigger button from taking focus away from editor
+        e.preventDefault();
+    };
+
+    const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+        // Prevent focus loss on touch devices
+        e.preventDefault();
     };
 
     // Position menu - always flip up
@@ -191,25 +235,16 @@ export default function DropDown({
             <button
                 type="button"
                 className="flex items-center justify-center w-8 h-8"
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowDropDown((o) => !o);
-                }}
-                onMouseDown={(e) => {
-                    // Prevent the button from taking focus
-                    e.preventDefault();
-                }}
-                onTouchStart={(e) => {
-                    // Prevent focus on touch devices
-                    e.preventDefault();
-                }}
+                onClick={handleToggle}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 ref={buttonRef}
                 style={{
                     WebkitTapHighlightColor: "transparent",
                     touchAction: "manipulation",
+                    WebkitTouchCallout: "none",
                 }}
-                tabIndex={-1}
+                tabIndex={-1} // Remove from tab order to prevent focus
             >
                 {trigger}
             </button>

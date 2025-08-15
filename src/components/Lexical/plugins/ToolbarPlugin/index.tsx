@@ -88,6 +88,7 @@ function ImagePicker({
                 className={
                     "flex items-center justify-center p-2 border-none text-base font-medium cursor-pointer transition-all select-none touch-manipulation focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
                 }
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                     if (canInsertImage) {
                         document.getElementById("file-input")?.click();

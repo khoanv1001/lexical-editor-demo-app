@@ -131,7 +131,28 @@ const ChipInput: React.FC<ChipInputProps> = ({
         setInputValue(filteredValue);
     };
 
-    const handleContainerClick = () => {
+    const handleContainerClick = (event: React.MouseEvent) => {
+        // Don't focus input if clicking on a chip
+        const target = event.target as HTMLElement;
+        if (target.closest('[data-testid="CancelIcon"], .MuiChip-root')) {
+            return;
+        }
+
+        if (!disabled && inputRef.current) {
+            inputRef.current.focus();
+        }
+    };
+
+    const handleContainerTouchEnd = (event: React.TouchEvent) => {
+        // Prevent double-tap zoom on iOS
+        event.preventDefault();
+
+        // Don't focus input if touching a chip
+        const target = event.target as HTMLElement;
+        if (target.closest('[data-testid="CancelIcon"], .MuiChip-root')) {
+            return;
+        }
+
         if (!disabled && inputRef.current) {
             inputRef.current.focus();
         }
@@ -143,6 +164,7 @@ const ChipInput: React.FC<ChipInputProps> = ({
         <div
             ref={containerRef}
             onClick={handleContainerClick}
+            onTouchEnd={handleContainerTouchEnd}
             className={`flex flex-wrap gap-2 items-center min-h-[40px] p-2 cursor-text flex-1 ${
                 disabled ? "opacity-60 cursor-not-allowed" : "cursor-text"
             }`}
@@ -166,6 +188,7 @@ const ChipInput: React.FC<ChipInputProps> = ({
 
             {canAddMore && !disabled && (
                 <StyledTextField
+                    className="flex-1 min-w-15"
                     inputRef={inputRef}
                     value={inputValue}
                     onChange={handleInputChange}
@@ -174,12 +197,6 @@ const ChipInput: React.FC<ChipInputProps> = ({
                     variant="standard"
                     size={size}
                     disabled={disabled}
-                    sx={{
-                        flexGrow: 1,
-                        minWidth: inputValue
-                            ? `${Math.max(inputValue.length * 8, 60)}px`
-                            : "60px",
-                    }}
                 />
             )}
         </div>

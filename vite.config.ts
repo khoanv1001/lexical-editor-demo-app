@@ -57,7 +57,7 @@ export default defineConfig({
         sourcemap: false,
         // Optimize for mobile performance
         minify: "terser",
-        target: ["es2015", "safari11"],
+        target: ["es2022", "safari11"],
         // Ensure CSS is inlined for WKWebView
         cssCodeSplit: false,
     },

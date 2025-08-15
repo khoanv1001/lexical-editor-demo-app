@@ -20,7 +20,6 @@ function App() {
         <Router>
             <div
                 className="w-full h-screen bg-gray-50 flex
-                      dark:bg-black
                       pl-safe-or-4 pr-safe-or-4 pb-safe-or-4"
             >
                 <Routes>
