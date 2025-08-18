@@ -6,10 +6,10 @@ const theme = createTheme({
     palette: {
         mode: "light",
         primary: {
-            main: "#3b82f6", // Blue-500
+            main: "#3b82f6",
         },
         secondary: {
-            main: "#10b981", // Emerald-500
+            main: "#10b981",
         },
     },
     shape: {

@@ -1,4 +1,3 @@
-import { AutoLinkNode } from "@lexical/link";
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import {
     AutoLinkPlugin,
@@ -11,29 +10,19 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { Chip } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { LuBookText } from "react-icons/lu";
-import { TiArrowSortedDown } from "react-icons/ti";
-import { ImageNode } from "./Lexical/nodes/ImageNode";
+import { IconsEnum } from "../enums/IconEnum";
+import { t } from "../i18n";
+import SwiftUIBridge from "../utils/bridge";
+import { CustomLexicalComposerProvider } from "../utils/CustomLexicalComposerProvider";
+import { SharedCommand } from "../utils/sharedCommands";
+import { createUrlMatchers } from "../utils/urlMatchers";
+import IconComponent from "./IconComponent";
+import { createDefaultLexicalContent, EditorNodes } from "./Lexical/editorNode";
+import { LexicalTheme } from "./Lexical/lexicalConfig";
 import ImagesPlugin from "./Lexical/plugins/ImagePlugin";
 import ToolbarPlugin from "./Lexical/plugins/ToolbarPlugin";
 import AddTagButtonComponent from "./Tag/AddTagButtonComponent";
 import TagEditorComponent from "./Tag/TagEditorComponent";
-import SwiftUIBridge from "../utils/bridge";
-import { HeadingNode } from "@lexical/rich-text";
-import { CustomLexicalComposerProvider } from "../utils/CustomLexicalComposerProvider";
-
-const theme = {
-    paragraph: "leading-6 last:mb-0",
-    text: {
-        bold: "font-bold",
-        italic: "italic",
-        underline: "underline",
-        strikethrough: "line-through",
-    },
-    heading: {
-        h1: "font-bold text-2xl",
-    },
-};
 
 function onError(error: Error) {
     console.error(error);
@@ -60,10 +49,12 @@ export default function LexicalEditor({
     const [canInsertImage, setCanInsertImage] = useState(true);
     const [isShowingTagEditor, setIsShowingTagEditor] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
+    const [bookName, setBookName] = useState(t("noBook"));
 
     useEffect(() => {
         // Setup listener for messages from SwiftUI
         SwiftUIBridge.onMessage((data) => {
+            setBookName(data || t("noBook"));
             SwiftUIBridge.postMessage(`Received from SwiftUI: ${data}`);
         });
     }, []);
@@ -78,13 +69,13 @@ export default function LexicalEditor({
 
     const closeEditor = () => {
         SwiftUIBridge.postMessage({
-            type: "CMD_CLOSE_EDITOR",
+            type: SharedCommand.CLOSE_EDITOR,
         });
     };
 
     const openBookSheet = () => {
         SwiftUIBridge.postMessage({
-            type: "CMD_OPEN_BOOK_SHEET",
+            type: SharedCommand.OPEN_BOOK_SHEET,
         });
     };
 
@@ -94,50 +85,15 @@ export default function LexicalEditor({
 
     const initialConfig = {
         namespace: "MobileEditor",
-        theme,
+        theme: LexicalTheme,
         onError,
-        nodes: [ImageNode, AutoLinkNode, HeadingNode],
+        nodes: EditorNodes,
         editorState: initialContent
-            ? JSON.stringify({
-                  root: {
-                      children: [
-                          {
-                              children: [
-                                  {
-                                      detail: 0,
-                                      format: 0,
-                                      mode: "normal",
-                                      style: "",
-                                      text: initialContent,
-                                      type: "text",
-                                      version: 1,
-                                  },
-                              ],
-                              direction: "ltr",
-                              format: "",
-                              indent: 0,
-                              type: "paragraph",
-                              version: 1,
-                          },
-                      ],
-                      direction: "ltr",
-                      format: "",
-                      indent: 0,
-                      type: "root",
-                      version: 1,
-                  },
-              })
+            ? JSON.stringify(createDefaultLexicalContent(initialContent))
             : undefined,
     };
 
-    const URL_REGEX =
-        /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)(?<![-.+():%])/;
-
-    const MATCHERS = [
-        createLinkMatcherWithRegExp(URL_REGEX, (text) => {
-            return text.startsWith("http") ? text : `https://${text}`;
-        }),
-    ];
+    const MATCHERS = createUrlMatchers(createLinkMatcherWithRegExp);
 
     return (
         <div className="w-full h-full m-0 p-2 pb-0 box-border bg-white flex flex-col pl-safe-or-2 pr-safe-or-2 overflow-hidden">
@@ -146,27 +102,32 @@ export default function LexicalEditor({
                     onClick={closeEditor}
                     className="text-gray-600 border-none pl-0 font-bold"
                 >
-                    キャンセル
+                    {t("cancel")}
                 </button>
                 <button
                     onClick={closeEditor}
                     className="px-2 py-2 text-white min-w-20 border font-bold text-sm rounded-xl bg-button-primary-background"
                 >
-                    投稿
+                    {t("post")}
                 </button>
             </div>
             <div className="p-4 text-lg flex items-center flex-shrink-0">
                 <button
+                    type="button"
                     onClick={openBookSheet}
                     className="px-4 py-3 text-xs flex justify-center border items-center rounded-xl border-border-default gap-2"
                 >
-                    <LuBookText size={16} />
-                    日々のこと
-                    <TiArrowSortedDown />
+                    {bookName !== t("noBook") ? (
+                        <IconComponent name={IconsEnum.Book} size={16} />
+                    ) : (
+                        <IconComponent name={IconsEnum.Cloud} size={16} />
+                    )}
+                    {bookName}
+                    <IconComponent name={IconsEnum.PullDown} size={16} />
                 </button>
             </div>
             <LexicalComposer initialConfig={initialConfig}>
-                <CustomLexicalComposerProvider theme={theme}>
+                <CustomLexicalComposerProvider theme={initialConfig.theme}>
                     <div className="flex flex-col h-full w-full min-h-0">
                         <div className="relative flex-1 w-full bg-white overflow-y-auto">
                             <RichTextPlugin
@@ -175,7 +136,7 @@ export default function LexicalEditor({
                                         <input
                                             className="w-full pb-3 border-none outline-none text-lg font-bold text-gray-500"
                                             type="text"
-                                            placeholder="タイトル"
+                                            placeholder={t("title")}
                                             onChange={() => {}}
                                         />
                                         <ContentEditable
