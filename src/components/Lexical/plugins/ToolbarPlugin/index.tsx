@@ -348,7 +348,10 @@ export default function ToolbarPlugin({
                    `}
                 type="button"
             >
-                <IconComponent name={IconsEnum.Undo} />
+                <IconComponent
+                    name={IconsEnum.Undo}
+                    className={toolbarState.canUndo ? "" : "text-text-sub"}
+                />
             </button>
             <button
                 onClick={() => {}}

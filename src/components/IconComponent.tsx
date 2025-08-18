@@ -1,18 +1,18 @@
 import React from "react";
 
-import PlusIcon from "../assets/icons/add-circle.svg";
-import UndoIcon from "../assets/icons/ando.svg";
-import BoldIcon from "../assets/icons/bold.svg";
-import BookIcon from "../assets/icons/book.svg";
-import CloudIcon from "../assets/icons/drift.svg";
-import H1Icon from "../assets/icons/headline.svg";
-import ImageIcon from "../assets/icons/image.svg";
-import KeyboardIcon from "../assets/icons/keyboard.svg";
-import LinkIcon from "../assets/icons/link.svg";
-import QuoteIcon from "../assets/icons/quote.svg";
-import StrikethroughIcon from "../assets/icons/strikethrough.svg";
-import TrashIcon from "../assets/icons/trash.svg";
-import PullDownIcon from "../assets/icons/pulldown.svg";
+import PlusIcon from "../assets/icons/add-circle.svg?react";
+import UndoIcon from "../assets/icons/ando.svg?react";
+import BoldIcon from "../assets/icons/bold.svg?react";
+import BookIcon from "../assets/icons/book.svg?react";
+import CloudIcon from "../assets/icons/drift.svg?react";
+import H1Icon from "../assets/icons/headline.svg?react";
+import ImageIcon from "../assets/icons/image.svg?react";
+import KeyboardIcon from "../assets/icons/keyboard.svg?react";
+import LinkIcon from "../assets/icons/link.svg?react";
+import QuoteIcon from "../assets/icons/quote.svg?react";
+import StrikethroughIcon from "../assets/icons/strikethrough.svg?react";
+import TrashIcon from "../assets/icons/trash.svg?react";
+import PullDownIcon from "../assets/icons/pulldown.svg?react";
 import { IconsEnum } from "../enums/IconEnum";
 
 const iconsMap = {
@@ -46,17 +46,18 @@ const IconComponent: React.FC<IconComponentProps> = ({
     className = "",
     ...props
 }) => {
-    const iconSrc = iconsMap[name];
-    if (!iconSrc) return null;
+    const IconComponent = iconsMap[name];
+    if (!IconComponent) return null;
 
     return (
-        <img
-            src={iconSrc}
-            width={size}
-            height={size}
-            className={className}
-            {...props}
-        />
+        <div>
+            <IconComponent
+                width={size}
+                height={size}
+                className={className}
+                {...props}
+            />
+        </div>
     );
 };
 
