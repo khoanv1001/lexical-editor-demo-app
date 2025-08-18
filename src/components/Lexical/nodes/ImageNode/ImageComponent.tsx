@@ -35,6 +35,7 @@ import { IconContext } from "react-icons";
 import { FaTrashAlt } from "react-icons/fa";
 import { $isImageNode } from ".";
 import { useLexicalComposerContext } from "../../../../utils/context";
+import { t } from "../../../../i18n";
 
 function LazyImage({
     altText,
@@ -166,7 +167,9 @@ export default function ImageComponent({
             ) {
                 $setSelection(null);
                 editor.update(() => {
-                    setSelected(true);
+                    {
+                        t("addCaption");
+                    }
                     const parentRootElement = editor.getRootElement();
                     if (parentRootElement !== null) {
                         parentRootElement.focus();

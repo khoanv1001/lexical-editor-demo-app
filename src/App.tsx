@@ -1,8 +1,8 @@
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import AppRedirect from "./components/AppRedirect";
-import LexicalEditor from "./components/LexicalEditor";
-import TestPage from "./components/TestPage";
 import { useEffect } from "react";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import LexicalEditor from "./components/LexicalEditor";
+import { t } from "./i18n";
+import { ToolbarContext } from "./components/Lexical/plugins/ToolbarPlugin/ToolbarContext";
 
 function App() {
     useEffect(() => {
@@ -29,50 +29,16 @@ function App() {
                         element={
                             <main className="max-w-full mx-auto flex-1 flex h-full">
                                 <div className="absolute top-5 right-5 z-50"></div>
-                                <LexicalEditor
-                                    placeholder="書く"
-                                    onContentChange={handleContentChange}
-                                    isRichText={true}
-                                />
+                                <ToolbarContext>
+                                    <LexicalEditor
+                                        placeholder={t("write")}
+                                        onContentChange={handleContentChange}
+                                        isRichText={true}
+                                    />
+                                </ToolbarContext>
                             </main>
                         }
                     />
-
-                    {/* iOS app redirect route */}
-                    <Route
-                        path="/open-app"
-                        element={
-                            <AppRedirect
-                                config={{
-                                    scheme: "your-app-scheme", // Replace with your actual app scheme
-                                    appStoreUrl:
-                                        "https://apps.apple.com/app/your-app-id", // Replace with your App Store URL
-                                    fallbackUrl: "/", // Fallback to home page for non-iOS users
-                                    timeout: 2500,
-                                }}
-                            />
-                        }
-                    />
-
-                    {/* Example: iOS app redirect with specific path */}
-                    <Route
-                        path="/open-app/:path"
-                        element={
-                            <AppRedirect
-                                config={{
-                                    scheme: "your-app-scheme",
-                                    appStoreUrl:
-                                        "https://apps.apple.com/app/your-app-id",
-                                    fallbackUrl: "/",
-                                    timeout: 2500,
-                                }}
-                                path="specific-feature" // This will create: your-app-scheme://specific-feature
-                            />
-                        }
-                    />
-
-                    {/* Test page for iOS redirect functionality */}
-                    <Route path="/test" element={<TestPage />} />
                 </Routes>
             </div>
         </Router>

@@ -70,11 +70,6 @@ export function DropDownItem({
                     ? "bg-blue-100 text-blue-800 border border-blue-200"
                     : "text-gray-700 hover:bg-gray-100 border border-transparent active:bg-gray-200"
             }`}
-            style={{
-                WebkitTapHighlightColor: "transparent",
-                touchAction: "manipulation",
-                WebkitTouchCallout: "none",
-            }}
         >
             <span className="text-left">{children}</span>
             {icon && <span className="ml-2">{icon}</span>}
@@ -239,11 +234,6 @@ export default function DropDown({
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
                 ref={buttonRef}
-                style={{
-                    WebkitTapHighlightColor: "transparent",
-                    touchAction: "manipulation",
-                    WebkitTouchCallout: "none",
-                }}
                 tabIndex={-1} // Remove from tab order to prevent focus
             >
                 {trigger}

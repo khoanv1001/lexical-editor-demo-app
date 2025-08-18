@@ -1,8 +1,18 @@
-import { mergeRegister } from "@lexical/utils";
+import {
+    $createHeadingNode,
+    $createQuoteNode,
+    $isHeadingNode,
+    type HeadingTagType,
+} from "@lexical/rich-text";
+import { $setBlocksType } from "@lexical/selection";
+import { $findMatchingParent, mergeRegister } from "@lexical/utils";
 import {
     $createParagraphNode,
+    $getRoot,
     $getSelection,
+    $isNodeSelection,
     $isRangeSelection,
+    $isRootOrShadowRoot,
     CAN_UNDO_COMMAND,
     COMMAND_PRIORITY_CRITICAL,
     COMMAND_PRIORITY_LOW,
@@ -10,20 +20,17 @@ import {
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND,
     type LexicalEditor,
+    type LexicalNode,
+    type NodeKey,
 } from "lexical";
 import { useCallback, useEffect, useState } from "react";
-import { FaQuoteLeft, FaRegImage } from "react-icons/fa6";
-import { HiMiniBold, HiMiniH1 } from "react-icons/hi2";
-import { LuCirclePlus } from "react-icons/lu";
-import { MdOutlineKeyboardHide } from "react-icons/md";
-import { RiLinkM } from "react-icons/ri";
-import { TbArrowBackUp } from "react-icons/tb";
-import { GoStrikethrough } from "react-icons/go";
+import { IconsEnum } from "../../../../enums/IconEnum";
+import { t } from "../../../../i18n";
+import { useLexicalComposerContext } from "../../../../utils/context";
+import IconComponent from "../../../IconComponent";
 import { INSERT_IMAGE_COMMAND } from "../ImagePlugin";
 import DropDown, { DropDownItem } from "./DropDownComponent";
-import { $setBlocksType } from "@lexical/selection";
-import { $createHeadingNode, type HeadingTagType } from "@lexical/rich-text";
-import { useLexicalComposerContext } from "../../../../utils/context";
+import { blockTypeToBlockName, useToolbarState } from "./ToolbarContext";
 
 interface ToolbarPluginProps {
     imageCount: number;
@@ -99,7 +106,7 @@ function ImagePicker({
                     }
                 }}
             >
-                <FaRegImage size={24} className="font-bold" />
+                <IconComponent name={IconsEnum.Image} />
             </button>
         </div>
     );
@@ -110,25 +117,57 @@ export default function ToolbarPlugin({
     canInsertImage,
 }: ToolbarPluginProps) {
     const [editor] = useLexicalComposerContext();
-    const [isBold, setIsBold] = useState(false);
-    const [activeItems, setActiveItems] = useState<Set<string>>(new Set());
     const [blockType, setBlockType] = useState("paragraph");
-    const [canUndo, setCanUndo] = useState(false);
+    const [, setSelectedElementKey] = useState<NodeKey | null>(null);
+    const { toolbarState, updateToolbarState } = useToolbarState();
+
+    const $handleHeadingNode = useCallback(
+        (selectedElement: LexicalNode) => {
+            const type = $isHeadingNode(selectedElement)
+                ? selectedElement.getTag()
+                : selectedElement.getType();
+
+            if (type in blockTypeToBlockName) {
+                updateToolbarState(
+                    "blockType",
+                    type as keyof typeof blockTypeToBlockName
+                );
+            }
+        },
+        [updateToolbarState]
+    );
 
     const $updateToolbar = useCallback(() => {
+        const root = $getRoot();
+        const text = root.getTextContent();
+        updateToolbarState("textLength", utf8Length(text));
+
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
-            setIsBold(selection.hasFormat("bold"));
-            const isStrikethrough = selection.hasFormat("strikethrough");
-            setActiveItems((prev) => {
-                const newSet = new Set(prev);
-                if (!isStrikethrough && newSet.has("Strikethrough")) {
-                    newSet.delete("Strikethrough");
+            const anchorNode = selection.anchor.getNode();
+            const element = $findTopLevelElement(anchorNode);
+            const elementKey = element.getKey();
+            const elementDOM = editor.getElementByKey(elementKey);
+
+            if (elementDOM !== null) {
+                setSelectedElementKey(elementKey);
+                $handleHeadingNode(element);
+            }
+
+            updateToolbarState("isBold", selection.hasFormat("bold"));
+            updateToolbarState(
+                "isStrikethrough",
+                selection.hasFormat("strikethrough")
+            );
+            if ($isNodeSelection(selection)) {
+                const nodes = selection.getNodes();
+                for (const selectedNode of nodes) {
+                    const selectedElement = $findTopLevelElement(selectedNode);
+                    $handleHeadingNode(selectedElement);
                 }
-                return newSet;
-            });
+            }
         }
-    }, []);
+    }, [editor, updateToolbarState, $handleHeadingNode]);
 
     useEffect(() => {
         return mergeRegister(
@@ -148,7 +187,7 @@ export default function ToolbarPlugin({
             editor.registerCommand<boolean>(
                 CAN_UNDO_COMMAND,
                 (payload) => {
-                    setCanUndo(payload);
+                    updateToolbarState("canUndo", payload);
                     return false;
                 },
                 COMMAND_PRIORITY_CRITICAL
@@ -156,16 +195,30 @@ export default function ToolbarPlugin({
         );
     }, [editor, $updateToolbar]);
 
-    const toggleItem = (itemId: string) => {
-        setActiveItems((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(itemId)) {
-                newSet.delete(itemId);
-            } else {
-                newSet.add(itemId);
-            }
-            return newSet;
-        });
+    const utf8Length = (text: string) => {
+        const currentTextEncoder = textEncoder();
+
+        if (currentTextEncoder === null) {
+            // http://stackoverflow.com/a/5515960/210370
+            const m = encodeURIComponent(text).match(/%[89ABab]/g);
+            return text.length + (m ? m.length : 0);
+        }
+
+        return currentTextEncoder.encode(text).length;
+    };
+
+    let textEncoderInstance: null | TextEncoder = null;
+
+    const textEncoder = (): null | TextEncoder => {
+        if (window.TextEncoder === undefined) {
+            return null;
+        }
+
+        if (textEncoderInstance === null) {
+            textEncoderInstance = new window.TextEncoder();
+        }
+
+        return textEncoderInstance;
     };
 
     const formatHeading = (
@@ -190,28 +243,48 @@ export default function ToolbarPlugin({
         }
     };
 
+    const formatQuote = (editor: LexicalEditor, blockType: string) => {
+        if (blockType !== "quote") {
+            editor.update(() => {
+                const selection = $getSelection();
+                setBlockType("quote");
+                $setBlocksType(selection, () => $createQuoteNode());
+            });
+        } else {
+            editor.update(() => {
+                const selection = $getSelection();
+                setBlockType("paragraph");
+                $setBlocksType(selection, () => $createParagraphNode());
+            });
+        }
+    };
+
     return (
-        <div className="flex items-center justify-start px-2 py-3 bg-white border-t border-border-default select-none">
-            <DropDown
-                trigger={<LuCirclePlus size={24} className="font-bold" />}
-            >
+        <div className="flex items-center justify-start px-3 py-2 bg-white border-t border-border-default select-none">
+            <DropDown trigger={<IconComponent name={IconsEnum.Plus} />}>
                 <DropDownItem
-                    onClick={() => toggleItem("Quote")}
-                    isActive={activeItems.has("Quote")}
-                    icon={<FaQuoteLeft size={16} />}
+                    onClick={() => {
+                        formatQuote(editor, blockType);
+                    }}
+                    isActive={toolbarState.blockType === "quote"}
+                    icon={<IconComponent name={IconsEnum.Quote} size={16} />}
                 >
                     Quote
                 </DropDownItem>
                 <DropDownItem
                     onClick={() => {
-                        toggleItem("Strikethrough");
                         editor.dispatchCommand(
                             FORMAT_TEXT_COMMAND,
                             "strikethrough"
                         );
                     }}
-                    isActive={activeItems.has("Strikethrough")}
-                    icon={<GoStrikethrough size={16} />}
+                    isActive={toolbarState.isStrikethrough}
+                    icon={
+                        <IconComponent
+                            name={IconsEnum.Strikethrough}
+                            size={16}
+                        />
+                    }
                 >
                     Strikethrough
                 </DropDownItem>
@@ -224,18 +297,17 @@ export default function ToolbarPlugin({
                 onClick={() => {
                     formatHeading(editor, blockType, "h1");
                 }}
-                className={`flex items-center justify-center p-2 border-none text-base font-medium cursor-pointer select-none touch-manipulation
+                className={`flex items-center justify-center p-2 border-none text-base font-medium cursor-pointer select-none touch-manipulation 
                     ${
-                        blockType === "h1"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:bg-gray-200 active:scale-95"
+                        toolbarState.blockType === "h1"
+                            ? "bg-blue-100 text-blue-800 border border-blue-200"
+                            : "bg-white border-gray-300 text-gray-700"
                     }
                    `}
                 aria-label="Format Bold"
                 type="button"
-                style={{ WebkitTapHighlightColor: "transparent" }}
             >
-                <HiMiniH1 size={24} className="font-bold" />
+                <IconComponent name={IconsEnum.H1} />
             </button>
             <button
                 onClick={() => {
@@ -244,48 +316,66 @@ export default function ToolbarPlugin({
                 className={`flex items-center justify-center p-2 border-none text-base font-medium cursor-pointer  select-none touch-manipulation transition duration-100 active:opacity-80 active:scale-95
                    
                    ${
-                       isBold
-                           ? "bg-blue-500 text-white border-blue-500"
-                           : "bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:bg-gray-200 active:scale-95"
+                       toolbarState.isBold
+                           ? "bg-blue-100 text-blue-800 border border-blue-200"
+                           : "bg-white border-gray-300 text-gray-700"
                    }`}
                 aria-label="Format Bold"
                 type="button"
-                style={{ WebkitTapHighlightColor: "transparent" }}
             >
-                <HiMiniBold size={24} className="font-bold" />
+                <IconComponent name={IconsEnum.Bold} />
             </button>
             <button
                 className={
                     "flex items-center justify-center p-2 border-none text-base font-medium cursor-pointer  select-none touch-manipulation "
                 }
             >
-                <RiLinkM size={24} className="font-bold" />
+                <IconComponent name={IconsEnum.Link} />
             </button>
-            <div className="px-2 text-xs text-text-sub">000000文字</div>
+            <div className="px-2 text-xs text-text-sub min-w-20">
+                {toolbarState.textLength.toLocaleString()}
+                {t("chars")}
+            </div>
             <div className="px-2">
                 <div className="bg-border-default w-0.5 h-6"></div>
             </div>
             <button
-                disabled={!canUndo}
+                disabled={!toolbarState.canUndo}
                 onClick={() => {
                     editor.dispatchCommand(UNDO_COMMAND, undefined);
                 }}
-                className={`flex items-center justify-center px-2 border-none text-base font-medium cursor-pointer select-none touch-manipulation
+                className={`flex items-center justify-center px-2 border-none text-base font-medium cursor-pointer
                    `}
                 type="button"
-                style={{ WebkitTapHighlightColor: "transparent" }}
             >
-                <TbArrowBackUp size={24} className="font-bold" />
+                <IconComponent
+                    name={IconsEnum.Undo}
+                    className={toolbarState.canUndo ? "" : "text-text-sub"}
+                />
             </button>
             <button
                 onClick={() => {}}
-                className={`flex items-center justify-center px-2 border-none text-base font-medium cursor-pointer select-none touch-manipulation
+                className={`flex items-center justify-center px-2 border-none text-base font-medium cursor-pointer
                    `}
                 type="button"
-                style={{ WebkitTapHighlightColor: "transparent" }}
             >
-                <MdOutlineKeyboardHide size={24} className="font-bold" />
+                <IconComponent name={IconsEnum.Keyboard} />
             </button>
         </div>
     );
+}
+
+function $findTopLevelElement(node: LexicalNode) {
+    let topLevelElement =
+        node.getKey() === "root"
+            ? node
+            : $findMatchingParent(node, (e) => {
+                  const parent = e.getParent();
+                  return parent !== null && $isRootOrShadowRoot(parent);
+              });
+
+    if (topLevelElement === null) {
+        topLevelElement = node.getTopLevelElementOrThrow();
+    }
+    return topLevelElement;
 }

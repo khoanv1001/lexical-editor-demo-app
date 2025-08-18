@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { t } from "../../i18n";
 import { FaHashtag } from "react-icons/fa";
 import { Sheet, type SheetRef } from "react-modal-sheet";
 import ChipInput from "./ChipInput";
@@ -32,10 +33,7 @@ const TagEditorComponent: React.FC<TagEditorProps> = ({
         onClose();
     };
 
-    const handleBackdropTap = () => {
-        onTagsChange?.(tags);
-        onClose();
-    };
+    const handleBackdropTap = handleSave;
 
     return (
         <>
@@ -77,7 +75,7 @@ const TagEditorComponent: React.FC<TagEditorProps> = ({
                                     onClick={handleSave}
                                     className="px-4 py-2 text-black text-sm rounded hover:bg-gray-100 transition-colors duration-200 border-none"
                                 >
-                                    完了
+                                    {t("done")}
                                 </button>
                             </div>
                         </div>
