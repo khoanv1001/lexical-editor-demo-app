@@ -12,6 +12,7 @@ export const IconsEnum = {
     Book: "book",
     Cloud: "cloud",
     PullDown: "pull-down",
+    Youtube: "youtube",
 } as const;
 
 export type IconsEnum = (typeof IconsEnum)[keyof typeof IconsEnum];

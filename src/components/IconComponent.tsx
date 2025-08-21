@@ -13,6 +13,7 @@ import QuoteIcon from "../assets/icons/quote.svg?react";
 import StrikethroughIcon from "../assets/icons/strikethrough.svg?react";
 import TrashIcon from "../assets/icons/trash.svg?react";
 import PullDownIcon from "../assets/icons/pulldown.svg?react";
+import YoutubeIcon from "../assets/icons/google.svg?react";
 import { IconsEnum } from "../enums/IconEnum";
 
 const iconsMap = {
@@ -29,6 +30,7 @@ const iconsMap = {
     [IconsEnum.Book]: BookIcon,
     [IconsEnum.Cloud]: CloudIcon,
     [IconsEnum.PullDown]: PullDownIcon,
+    [IconsEnum.Youtube]: YoutubeIcon,
 };
 
 export interface IconComponentProps {

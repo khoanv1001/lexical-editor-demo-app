@@ -1,5 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-import { $isAtNodeEnd } from "@lexical/selection";
 import { $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
 import {
     $createParagraphNode,
@@ -12,20 +11,19 @@ import {
     COMMAND_PRIORITY_EDITOR,
     createCommand,
     ElementNode,
-    TextNode,
     type LexicalCommand,
     type LexicalEditor,
     type LexicalNode,
     type NodeKey,
-    type RangeSelection,
 } from "lexical";
-import { useEffect, useCallback, type JSX } from "react";
+import { useCallback, useEffect, type JSX } from "react";
+import { useLexicalComposerContext } from "../../../../utils/context";
+import { getSelectedNode } from "../../../../utils/lexical";
 import {
     $createImageNode,
     $isImageNode,
     ImageNode,
 } from "../../nodes/ImageNode";
-import { useLexicalComposerContext } from "../../../../utils/context";
 
 export const ImageMaxLength = 100;
 
@@ -173,25 +171,6 @@ export function insertImage(
     }
     editor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
     return true;
-}
-
-export function getSelectedNode(
-    selection: RangeSelection
-): TextNode | ElementNode {
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
-
-    if (anchorNode === focusNode) {
-        return anchorNode;
-    }
-    const isBackward = selection.isBackward();
-    if (isBackward) {
-        return $isAtNodeEnd(focus) ? anchorNode : focusNode;
-    } else {
-        return $isAtNodeEnd(anchor) ? focusNode : anchorNode;
-    }
 }
 
 declare global {

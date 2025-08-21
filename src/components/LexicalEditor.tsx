@@ -1,4 +1,3 @@
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import {
     AutoLinkPlugin,
     createLinkMatcherWithRegExp,
@@ -20,9 +19,15 @@ import IconComponent from "./IconComponent";
 import { createDefaultLexicalContent, EditorNodes } from "./Lexical/editorNode";
 import { LexicalTheme } from "./Lexical/lexicalConfig";
 import ImagesPlugin from "./Lexical/plugins/ImagePlugin";
+import SetDataPlugin from "./Lexical/plugins/SetDataPlugin";
 import ToolbarPlugin from "./Lexical/plugins/ToolbarPlugin";
 import AddTagButtonComponent from "./Tag/AddTagButtonComponent";
 import TagEditorComponent from "./Tag/TagEditorComponent";
+import AutoEmbedPlugin from "./Lexical/plugins/AutoEmbedPlugin";
+import YouTubePlugin from "./Lexical/plugins/YoutubePlugin";
+import TwitterPlugin from "./Lexical/plugins/TwitterPlugin";
+import InstagramPlugin from "./Lexical/plugins/InstagramPlugin";
+import InsertLinkPlugin from "./Lexical/plugins/InsertLinkPlugin";
 
 function onError(error: Error) {
     console.error(error);
@@ -94,6 +99,8 @@ export default function LexicalEditor({
     };
 
     const MATCHERS = createUrlMatchers(createLinkMatcherWithRegExp);
+
+    // const testHTMLString: string = `<p class="leading-6 last:mb-0" dir="ltr"><span style="white-space: pre-wrap;">avacascasc</span></p><p class="leading-6 last:mb-0" dir="ltr"><b><strong class="font-bold" style="white-space: pre-wrap;">ascascasca</strong></b></p><h1 class="font-bold text-2xl" dir="ltr"><span style="white-space: pre-wrap;">ascascascc</span></h1><figure class="blockquote m-0 mb-[10px] ml-5 text-[15px] text-[#65676b] border-l-4 border-[#ced0d4] pl-4"><blockquote><p>ascascascas</p></blockquote></figure>`;
 
     return (
         <div className="w-full h-full m-0 p-2 pb-0 box-border bg-white flex flex-col pl-safe-or-2 pr-safe-or-2 overflow-hidden">
@@ -169,8 +176,13 @@ export default function LexicalEditor({
                                 onImageCountChange={handleImageCountChange}
                             />
                             <AutoLinkPlugin matchers={MATCHERS} />
+                            <AutoEmbedPlugin />
+                            <YouTubePlugin />
+                            <TwitterPlugin />
                             <HistoryPlugin />
-                            <AutoFocusPlugin />
+                            <InstagramPlugin />
+                            <InsertLinkPlugin />
+                            <SetDataPlugin initValue={""} />
                         </div>
                         <div className="flex w-full flex-shrink-0">
                             {tags.length == 0 ? (
