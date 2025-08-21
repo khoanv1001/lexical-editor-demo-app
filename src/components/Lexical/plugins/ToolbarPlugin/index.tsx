@@ -34,15 +34,18 @@ import { blockTypeToBlockName, useToolbarState } from "./ToolbarContext";
 
 interface ToolbarPluginProps {
     imageCount: number;
+    maxImages: number;
     canInsertImage: boolean;
 }
 
 function ImagePicker({
     canInsertImage,
     imageCount,
+    maxImages,
 }: {
     canInsertImage: boolean;
     imageCount: number;
+    maxImages: number;
 }) {
     const [editor] = useLexicalComposerContext();
 
@@ -50,10 +53,10 @@ function ImagePicker({
         if (!files || files.length === 0) return;
 
         const filesToProcess = Array.from(files);
-        const availableSlots = Math.min(filesToProcess.length, 2 - imageCount);
+        const availableSlots = Math.min(filesToProcess.length, maxImages - imageCount);
 
         if (availableSlots <= 0) {
-            alert(`Maximum of 2 images allowed. Current count: ${imageCount}`);
+            alert(`Maximum of ${maxImages} images allowed. Current count: ${imageCount}`);
             return;
         }
 
@@ -113,6 +116,7 @@ function ImagePicker({
 
 export default function ToolbarPlugin({
     imageCount,
+    maxImages,
     canInsertImage,
 }: ToolbarPluginProps) {
     const [editor] = useLexicalComposerContext();
@@ -291,6 +295,7 @@ export default function ToolbarPlugin({
             <ImagePicker
                 canInsertImage={canInsertImage}
                 imageCount={imageCount}
+                maxImages={maxImages}
             />
             <button
                 onClick={() => {

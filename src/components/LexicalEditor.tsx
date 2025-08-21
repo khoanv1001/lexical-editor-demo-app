@@ -112,7 +112,7 @@ export default function LexicalEditor({
     onBlur,
     initialContent = "",
     isRichText = true,
-    maxImages = 2,
+    maxImages = 15,
 }: LexicalEditorProps & { maxImages?: number }) {
     const [imageCount, setImageCount] = useState(0);
     const [canInsertImage, setCanInsertImage] = useState(true);
@@ -326,6 +326,7 @@ export default function LexicalEditor({
                             <div className="flex-shrink-0">
                                 <ToolbarPlugin
                                     imageCount={imageCount}
+                                    maxImages={maxImages}
                                     canInsertImage={canInsertImage}
                                 />
                             </div>

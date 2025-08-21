@@ -131,6 +131,7 @@ export default function ImagesPlugin({
                     } else {
                         $insertNodeToNearestRoot(imageNode);
                     }
+                    imageNode.insertAfter($createParagraphNode());
 
                     return true;
                 },
