@@ -72,7 +72,6 @@ function ImagePicker({
                         altText: "Uploaded Image",
                         maxWidth: 600,
                         showCaption: false,
-                        captionsEnabled: false,
                     });
                 }
             };

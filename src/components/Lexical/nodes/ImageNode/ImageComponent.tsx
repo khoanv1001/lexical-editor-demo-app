@@ -36,6 +36,11 @@ import { FaTrashAlt } from "react-icons/fa";
 import { $isImageNode } from ".";
 import { useLexicalComposerContext } from "../../../../utils/context";
 import { t } from "../../../../i18n";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { LexicalNestedComposer } from "@lexical/react/LexicalNestedComposer";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 
 function LazyImage({
     altText,
@@ -50,13 +55,13 @@ function LazyImage({
     height: "inherit" | number;
     imageRef: { current: null | HTMLImageElement };
     src: string;
-    width: "inherit" | number;
+    width: "100%" | number;
 }): JSX.Element {
     return (
         <img
             className={clsx(
                 className || undefined,
-                "max-h-full cursor-pointer max-w-full"
+                "max-h-full cursor-pointer max-w-full rounded-lg"
             )}
             src={src}
             alt={altText}
@@ -88,7 +93,7 @@ export default function ImageComponent({
     resizable: boolean;
     showCaption: boolean;
     src: string;
-    width: "inherit" | number;
+    width: "100%" | number;
     captionsEnabled: boolean;
 }): JSX.Element {
     const imageRef = useRef<null | HTMLImageElement>(null);
@@ -305,18 +310,44 @@ export default function ImageComponent({
                             <FaTrashAlt onClick={onButtonDeleteImage} />
                         </IconContext.Provider>
                     )}
+                    <div ref={controlWrapperRef}>
+                        {!showCaption && captionsEnabled && (
+                            <button
+                                className="block absolute bottom-5 left-0 right-0 w-[30%] py-2.5 px-4 mx-auto border border-white/30 rounded bg-black/50 min-w-[100px] text-white cursor-pointer select-none hover:bg-blue-500/50"
+                                ref={buttonRef}
+                                onClick={setShowCaption}
+                            >
+                                キャプションを追加
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div ref={controlWrapperRef}>
-                    {!showCaption && captionsEnabled && (
-                        <button
-                            className="block absolute bottom-5 left-0 right-0 w-[30%] py-2.5 px-4 mx-auto border border-white/30 rounded bg-black/50 min-w-[100px] text-white cursor-pointer select-none hover:bg-blue-500/50"
-                            ref={buttonRef}
-                            onClick={setShowCaption}
-                        >
-                            キャプションを追加
-                        </button>
-                    )}
-                </div>
+                {showCaption && (
+                    <div className="block relative bottom-0 left-0 right-0 p-[10px] m-0 border-solid border-t-[1px] border-[#fff] bg-gray-200 min-w-[100px] text-[#000] overflow-hidden max-h-full">
+                        <LexicalNestedComposer initialEditor={caption}>
+                            <HistoryPlugin />
+                            <RichTextPlugin
+                                contentEditable={
+                                    <ContentEditable
+                                        className={
+                                            "min-h-[20px] border-0 resize-none cursor-text caret-[#050505] block relative outline-0 select-text text-base w-[calc(100% - 20px)] whitespace-pre-wrap break-words"
+                                        }
+                                    />
+                                }
+                                placeholder={
+                                    <div
+                                        className={
+                                            "text-base text-[#888] overflow-hidden absolute text-ellipsis top-2.5 left-2.5 select-none whitespace-nowrap block pointer-events-none"
+                                        }
+                                    >
+                                        キャプションを入力
+                                    </div>
+                                }
+                                ErrorBoundary={LexicalErrorBoundary}
+                            />
+                        </LexicalNestedComposer>
+                    </div>
+                )}
             </>
         </Suspense>
     );

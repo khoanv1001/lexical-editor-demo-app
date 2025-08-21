@@ -10,6 +10,9 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { Chip } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
+import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { IconsEnum } from "../enums/IconEnum";
 import { t } from "../i18n";
 import SwiftUIBridge from "../utils/bridge";
@@ -17,7 +20,7 @@ import { CustomLexicalComposerProvider } from "../utils/CustomLexicalComposerPro
 import { SharedCommand } from "../utils/sharedCommands";
 import { createUrlMatchers } from "../utils/urlMatchers";
 import IconComponent from "./IconComponent";
-import { createDefaultLexicalContent, EditorNodes } from "./Lexical/editorNode";
+import { EditorNodes, createDefaultLexicalContent } from "./Lexical/editorNode";
 import { LexicalTheme } from "./Lexical/lexicalConfig";
 import ImagesPlugin from "./Lexical/plugins/ImagePlugin";
 import ToolbarPlugin from "./Lexical/plugins/ToolbarPlugin";
@@ -36,6 +39,72 @@ export interface LexicalEditorProps {
     initialContent?: string;
     isRichText?: boolean;
 }
+
+const EditorCapturePlugin = () => {
+    const [editor] = useLexicalComposerContext();
+
+    const handleExportHtml = useCallback(() => {
+        let htmlString = "";
+        editor.read(() => {
+            htmlString = $generateHtmlFromNodes(editor);
+        });
+        return htmlString;
+    }, [editor]);
+
+    const handleImportHtml = useCallback(async () => {
+        try {
+            const clipboardText = await navigator.clipboard.readText();
+            console.log("Clipboard content:", clipboardText);
+
+            if (clipboardText) {
+                editor.update(() => {
+                    try {
+                        const root = $getRoot();
+                        root.clear();
+
+                        try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(
+                                clipboardText,
+                                "text/html"
+                            );
+                            console.log("Parsed DOM document:", doc);
+
+                            const nodes = $generateNodesFromDOM(editor, doc);
+                            console.log("Generated Lexical nodes:", nodes);
+
+                            if (nodes.length > 0) {
+                                root.append(...nodes);
+                            } else {
+                                throw new Error("No HTML nodes generated");
+                            }
+                        } catch (htmlError) {
+                            const paragraph = $createParagraphNode();
+                            const textNode = $createTextNode(clipboardText);
+                            paragraph.append(textNode);
+                            root.append(paragraph);
+                        }
+                    } catch (error) {
+                        throw error;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Failed to import content:", error);
+        }
+    }, [editor]);
+
+    useEffect(() => {
+        (window as any).exportLexicalHtml = handleExportHtml;
+        (window as any).importLexicalHtml = handleImportHtml;
+        return () => {
+            delete (window as any).exportLexicalHtml;
+            delete (window as any).importLexicalHtml;
+        };
+    }, [handleExportHtml, handleImportHtml]);
+
+    return null;
+};
 
 export default function LexicalEditor({
     placeholder = "Start typing...",
@@ -71,6 +140,23 @@ export default function LexicalEditor({
         SwiftUIBridge.postMessage({
             type: SharedCommand.CLOSE_EDITOR,
         });
+    };
+
+    const exportHtml = () => {
+        if ((window as any).exportLexicalHtml) {
+            const htmlString = (window as any).exportLexicalHtml();
+            SwiftUIBridge.postMessage({
+                type: SharedCommand.EXPORT_HTML,
+                data: htmlString,
+            });
+            console.log("Exported HTML:", htmlString);
+        }
+    };
+
+    const importHtml = () => {
+        if ((window as any).importLexicalHtml) {
+            (window as any).importLexicalHtml();
+        }
     };
 
     const openBookSheet = () => {
@@ -110,6 +196,20 @@ export default function LexicalEditor({
                 >
                     {t("post")}
                 </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={exportHtml}
+                        className="px-2 py-2 text-white min-w-20 border font-bold text-sm rounded-xl bg-button-primary-background"
+                    >
+                        export html
+                    </button>
+                    <button
+                        onClick={importHtml}
+                        className="px-2 py-2 text-white min-w-20 border font-bold text-sm rounded-xl bg-blue-600"
+                    >
+                        import html from clipboard
+                    </button>
+                </div>
             </div>
             <div className="p-4 text-lg flex items-center flex-shrink-0">
                 <button
@@ -171,6 +271,7 @@ export default function LexicalEditor({
                             <AutoLinkPlugin matchers={MATCHERS} />
                             <HistoryPlugin />
                             <AutoFocusPlugin />
+                            <EditorCapturePlugin />
                         </div>
                         <div className="flex w-full flex-shrink-0">
                             {tags.length == 0 ? (

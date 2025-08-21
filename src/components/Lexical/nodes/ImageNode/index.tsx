@@ -1,5 +1,7 @@
-import { $generateHtmlFromNodes } from "@lexical/html";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import type {
+    DOMConversionMap,
+    DOMConversionOutput,
     DOMExportOutput,
     EditorConfig,
     LexicalEditor,
@@ -9,9 +11,9 @@ import type {
     SerializedLexicalNode,
     Spread,
 } from "lexical";
-import { createEditor, DecoratorNode } from "lexical";
+import { $getRoot, $insertNodes, COMMAND_PRIORITY_NORMAL, DecoratorNode, createEditor } from "lexical";
 import * as React from "react";
-import { Suspense, type JSX } from "react";
+import { type JSX, Suspense } from "react";
 const ImageComponent = React.lazy(
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -26,14 +28,14 @@ export interface ImagePayload {
     maxWidth?: number;
     showCaption?: boolean;
     src: string;
-    width?: number;
+    width?: number | "100%";
     captionsEnabled?: boolean;
 }
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
     __src: string;
     __altText: string;
-    __width: "inherit" | number;
+    __width: "100%" | number;
     __height: "inherit" | number;
     __maxWidth: number;
     __showCaption: boolean;
@@ -64,15 +66,16 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         element.setAttribute("class", "image");
 
         const imageElement = document.createElement("image");
-        imageElement.setAttribute("src", this.__src);
+        // TODO: remove mock data
+        imageElement.setAttribute("src", "https://picsum.photos/200");
         imageElement.setAttribute("alt", this.__altText);
         imageElement.setAttribute(
             "width",
-            this.__width === "inherit" ? this.__width : this.__width + "px"
+            this.__width === "100%" ? this.__width : `${this.__width}px`
         );
         imageElement.setAttribute(
             "height",
-            this.__height === "inherit" ? this.__height : this.__height + "px"
+            this.__height === "inherit" ? this.__height : `${this.__height}px`
         );
 
         element.appendChild(imageElement);
@@ -92,11 +95,77 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         return { element };
     }
 
+    static importDOM(): DOMConversionMap | null {
+        return {
+            figure: (node: Node) => {
+                const classNode = (node as HTMLElement).getAttribute("class");
+                if (classNode === "image") {
+                    return {
+                        conversion: ImageNode.convertFigureElement,
+                        priority: COMMAND_PRIORITY_NORMAL
+                    };
+                }
+
+                return null;
+            },
+        };
+    }
+
+    static convertFigureElement(domNode: Node): null | DOMConversionOutput {
+        const imgElement = (domNode as HTMLElement).querySelector("img");
+        if (imgElement instanceof HTMLImageElement) {
+            const figcaptionElement = (domNode as HTMLElement).querySelector(
+                "figcaption"
+            );
+            const captionEditor = createEditor();
+            let showCaption = false;
+
+            if (figcaptionElement !== null) {
+                const captionInnerHTML = figcaptionElement.innerHTML;
+                if (captionInnerHTML) {
+                    showCaption = true;
+                    captionEditor.update(() => {
+                        const parser = new DOMParser();
+                        const dom = parser.parseFromString(
+                            captionInnerHTML,
+                            "text/html"
+                        );
+                        const nodes = $generateNodesFromDOM(captionEditor, dom);
+
+                        $getRoot().select();
+                        $insertNodes(nodes);
+                    });
+                }
+            }
+
+            const { alt: altText, src, height } = imgElement;
+
+            let width: number | "100%";
+            if (imgElement.getAttribute("width") === "100%") {
+                width = "100%";
+            } else {
+                width = parseInt(imgElement.getAttribute("width")!, 10) || "100%";
+            }
+
+            const node = $createImageNode({
+                altText: altText,
+                src: src,
+                width: width,
+                height: height,
+                caption: captionEditor,
+                showCaption: showCaption,
+            });
+            return { node };
+        }
+
+        return null;
+    }
+
     constructor(
         src: string,
         altText: string,
         maxWidth: number,
-        width?: "inherit" | number,
+        width?: "100%" | number,
         height?: "inherit" | number,
         showCaption?: boolean,
         caption?: LexicalEditor,
@@ -107,7 +176,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         this.__src = src;
         this.__altText = altText;
         this.__maxWidth = maxWidth;
-        this.__width = width || "inherit";
+        this.__width = width || "100%";
         this.__height = height || "inherit";
         this.__showCaption = showCaption || false;
         this.__caption = caption || createEditor();
@@ -116,7 +185,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     }
 
     setWidthAndHeight(
-        width: "inherit" | number,
+        width: "100%" | number,
         height: "inherit" | number
     ): void {
         const writable = this.getWritable();
