@@ -10,6 +10,9 @@ export const ja = {
     chars: "文字",
     addCaption: "キャプションを追加",
     noBook: "ブックなし",
+    insert: "挿入",
+    pasteURL: "URLをそのまま貼り付ける",
+    embed: "を埋め込む",
 };
 
 export type JaKey = keyof typeof ja;

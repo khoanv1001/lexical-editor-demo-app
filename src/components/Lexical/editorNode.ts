@@ -1,13 +1,34 @@
 import { AutoLinkNode } from "@lexical/link";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import type { KlassConstructor, LexicalNode } from "lexical";
+import { CustomLinkNode } from "./nodes/CustomLinkNode";
 import { ImageNode } from "./nodes/ImageNode";
+import { InstagramNode } from "./nodes/InstagramNode";
+import { $createCustomQuoteNode, CustomQuoteNode } from "./nodes/QuoteNode";
+import { TweetNode } from "./nodes/TweetNode";
+import { YouTubeNode } from "./nodes/YoutubeNode";
 
-export const EditorNodes: Array<KlassConstructor<typeof LexicalNode>> = [
+export const EditorNodes: (
+    | KlassConstructor<typeof LexicalNode>
+    | {
+          replace: KlassConstructor<typeof LexicalNode>;
+          with: (node: LexicalNode) => LexicalNode;
+          withKlass: KlassConstructor<typeof LexicalNode>;
+      }
+)[] = [
     ImageNode,
     AutoLinkNode,
+    CustomLinkNode,
+    YouTubeNode,
+    TweetNode,
+    InstagramNode,
     HeadingNode,
-    QuoteNode,
+    CustomQuoteNode,
+    {
+        replace: QuoteNode,
+        with: () => $createCustomQuoteNode(),
+        withKlass: CustomQuoteNode,
+    },
 ];
 
 export const createDefaultLexicalContent = (initialContent: string) => ({

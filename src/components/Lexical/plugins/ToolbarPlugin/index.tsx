@@ -1,3 +1,4 @@
+import { $generateHtmlFromNodes } from "@lexical/html";
 import {
     $createHeadingNode,
     $createQuoteNode,
@@ -8,6 +9,7 @@ import { $setBlocksType } from "@lexical/selection";
 import { $findMatchingParent, mergeRegister } from "@lexical/utils";
 import {
     $createParagraphNode,
+    $getCharacterOffsets,
     $getRoot,
     $getSelection,
     $isNodeSelection,
@@ -31,6 +33,9 @@ import IconComponent from "../../../IconComponent";
 import { INSERT_IMAGE_COMMAND } from "../ImagePlugin";
 import DropDown, { DropDownItem } from "./DropDownComponent";
 import { blockTypeToBlockName, useToolbarState } from "./ToolbarContext";
+import { INSERT_CUSTOM_LINK_COMMAND } from "../InsertLinkPlugin";
+import { $isLinkNode } from "../../nodes/CustomLinkNode";
+import { getSelectedNode } from "../../../../utils/lexical";
 
 interface ToolbarPluginProps {
     imageCount: number;
@@ -113,6 +118,31 @@ function ImagePicker({
         </div>
     );
 }
+let textEncoderInstance: null | TextEncoder = null;
+
+function getTextEncoder(): null | TextEncoder {
+    if (window.TextEncoder === undefined) {
+        return null;
+    }
+
+    if (textEncoderInstance === null) {
+        textEncoderInstance = new window.TextEncoder();
+    }
+
+    return textEncoderInstance;
+}
+
+function utf8Length(text: string) {
+    const currentTextEncoder = getTextEncoder();
+
+    if (currentTextEncoder === null) {
+        // http://stackoverflow.com/a/5515960/210370
+        const m = encodeURIComponent(text).match(/%[89ABab]/g);
+        return text.length + (m ? m.length : 0);
+    }
+
+    return currentTextEncoder.encode(text).length;
+}
 
 export default function ToolbarPlugin({
     imageCount,
@@ -139,6 +169,30 @@ export default function ToolbarPlugin({
         },
         [updateToolbarState]
     );
+
+    const insertLink = useCallback(() => {
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                const [anchorOffset, focusOffset] =
+                    $getCharacterOffsets(selection);
+                const node = getSelectedNode(selection);
+                const parent = node.getParent();
+                let url: string;
+
+                if (parent && $isLinkNode(parent)) {
+                    url = parent.getURL();
+                } else if ($isLinkNode(node)) {
+                    url = node.getURL();
+                } else if (anchorOffset === focusOffset) {
+                    return;
+                } else {
+                    url = "";
+                }
+                editor.dispatchCommand(INSERT_CUSTOM_LINK_COMMAND, url);
+            }
+        });
+    }, [editor]);
 
     const $updateToolbar = useCallback(() => {
         const root = $getRoot();
@@ -170,7 +224,7 @@ export default function ToolbarPlugin({
                 }
             }
         }
-    }, [editor, updateToolbarState, $handleHeadingNode]);
+    }, [updateToolbarState, editor, $handleHeadingNode]);
 
     useEffect(() => {
         return mergeRegister(
@@ -196,33 +250,7 @@ export default function ToolbarPlugin({
                 COMMAND_PRIORITY_CRITICAL
             )
         );
-    }, [editor, $updateToolbar]);
-
-    const utf8Length = (text: string) => {
-        const currentTextEncoder = textEncoder();
-
-        if (currentTextEncoder === null) {
-            // http://stackoverflow.com/a/5515960/210370
-            const m = encodeURIComponent(text).match(/%[89ABab]/g);
-            return text.length + (m ? m.length : 0);
-        }
-
-        return currentTextEncoder.encode(text).length;
-    };
-
-    let textEncoderInstance: null | TextEncoder = null;
-
-    const textEncoder = (): null | TextEncoder => {
-        if (window.TextEncoder === undefined) {
-            return null;
-        }
-
-        if (textEncoderInstance === null) {
-            textEncoderInstance = new window.TextEncoder();
-        }
-
-        return textEncoderInstance;
-    };
+    }, [editor, $updateToolbar, updateToolbarState]);
 
     const formatHeading = (
         editor: LexicalEditor,
@@ -330,6 +358,7 @@ export default function ToolbarPlugin({
                 <IconComponent name={IconsEnum.Bold} />
             </button>
             <button
+                onClick={insertLink}
                 className={
                     "flex items-center justify-center p-2 border-none text-base font-medium cursor-pointer  select-none touch-manipulation "
                 }
@@ -358,7 +387,12 @@ export default function ToolbarPlugin({
                 />
             </button>
             <button
-                onClick={() => {}}
+                onClick={() => {
+                    editor.read(() => {
+                        const htmlString = $generateHtmlFromNodes(editor, null);
+                        console.log(`HTML String: ${htmlString}`);
+                    });
+                }}
                 className={`flex items-center justify-center px-2 border-none text-base font-medium cursor-pointer
                    `}
                 type="button"

@@ -1,4 +1,4 @@
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     AutoLinkPlugin,
     createLinkMatcherWithRegExp,
@@ -23,9 +23,15 @@ import IconComponent from "./IconComponent";
 import { EditorNodes, createDefaultLexicalContent } from "./Lexical/editorNode";
 import { LexicalTheme } from "./Lexical/lexicalConfig";
 import ImagesPlugin from "./Lexical/plugins/ImagePlugin";
+import SetDataPlugin from "./Lexical/plugins/SetDataPlugin";
 import ToolbarPlugin from "./Lexical/plugins/ToolbarPlugin";
 import AddTagButtonComponent from "./Tag/AddTagButtonComponent";
 import TagEditorComponent from "./Tag/TagEditorComponent";
+import AutoEmbedPlugin from "./Lexical/plugins/AutoEmbedPlugin";
+import YouTubePlugin from "./Lexical/plugins/YoutubePlugin";
+import TwitterPlugin from "./Lexical/plugins/TwitterPlugin";
+import InstagramPlugin from "./Lexical/plugins/InstagramPlugin";
+import InsertLinkPlugin from "./Lexical/plugins/InsertLinkPlugin";
 
 function onError(error: Error) {
     console.error(error);
@@ -58,34 +64,30 @@ const EditorCapturePlugin = () => {
 
             if (clipboardText) {
                 editor.update(() => {
+                    const root = $getRoot();
+                    root.clear();
+
                     try {
-                        const root = $getRoot();
-                        root.clear();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(
+                            clipboardText,
+                            "text/html"
+                        );
+                        console.log("Parsed DOM document:", doc);
 
-                        try {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(
-                                clipboardText,
-                                "text/html"
-                            );
-                            console.log("Parsed DOM document:", doc);
+                        const nodes = $generateNodesFromDOM(editor, doc);
+                        console.log("Generated Lexical nodes:", nodes);
 
-                            const nodes = $generateNodesFromDOM(editor, doc);
-                            console.log("Generated Lexical nodes:", nodes);
-
-                            if (nodes.length > 0) {
-                                root.append(...nodes);
-                            } else {
-                                throw new Error("No HTML nodes generated");
-                            }
-                        } catch (htmlError) {
-                            const paragraph = $createParagraphNode();
-                            const textNode = $createTextNode(clipboardText);
-                            paragraph.append(textNode);
-                            root.append(paragraph);
+                        if (nodes.length > 0) {
+                            root.append(...nodes);
+                        } else {
+                            throw new Error("No HTML nodes generated");
                         }
-                    } catch (error) {
-                        throw error;
+                    } catch {
+                        const paragraph = $createParagraphNode();
+                        const textNode = $createTextNode(clipboardText);
+                        paragraph.append(textNode);
+                        root.append(paragraph);
                     }
                 });
             }
@@ -181,6 +183,8 @@ export default function LexicalEditor({
 
     const MATCHERS = createUrlMatchers(createLinkMatcherWithRegExp);
 
+    // const testHTMLString: string = `<p class="leading-6 last:mb-0" dir="ltr"><span style="white-space: pre-wrap;">avacascasc</span></p><p class="leading-6 last:mb-0" dir="ltr"><b><strong class="font-bold" style="white-space: pre-wrap;">ascascasca</strong></b></p><h1 class="font-bold text-2xl" dir="ltr"><span style="white-space: pre-wrap;">ascascascc</span></h1><figure class="blockquote m-0 mb-[10px] ml-5 text-[15px] text-[#65676b] border-l-4 border-[#ced0d4] pl-4"><blockquote><p>ascascascas</p></blockquote></figure>`;
+
     return (
         <div className="w-full h-full m-0 p-2 pb-0 box-border bg-white flex flex-col pl-safe-or-2 pr-safe-or-2 overflow-hidden">
             <div className="flex w-full justify-between items-end p-4 py-2 text-sm flex-shrink-0">
@@ -269,8 +273,13 @@ export default function LexicalEditor({
                                 onImageCountChange={handleImageCountChange}
                             />
                             <AutoLinkPlugin matchers={MATCHERS} />
+                            <AutoEmbedPlugin />
+                            <YouTubePlugin />
+                            <TwitterPlugin />
                             <HistoryPlugin />
-                            <AutoFocusPlugin />
+                            <InstagramPlugin />
+                            <InsertLinkPlugin />
+                            <SetDataPlugin initValue={""} />
                             <EditorCapturePlugin />
                         </div>
                         <div className="flex w-full flex-shrink-0">

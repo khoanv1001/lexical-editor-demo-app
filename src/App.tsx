@@ -3,8 +3,10 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import LexicalEditor from "./components/LexicalEditor";
 import { t } from "./i18n";
 import { ToolbarContext } from "./components/Lexical/plugins/ToolbarPlugin/ToolbarContext";
+import { useExternalScripts } from "./components/hooks/useExternalScripts";
 
 function App() {
+    useExternalScripts();
     useEffect(() => {
         document.addEventListener("touchstart", function () {}, {
             passive: true,
