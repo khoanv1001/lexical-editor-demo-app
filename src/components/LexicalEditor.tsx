@@ -9,7 +9,7 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { Chip } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef, type JSX } from "react";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
@@ -121,6 +121,7 @@ export default function LexicalEditor({
     const [isShowingTagEditor, setIsShowingTagEditor] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
     const [bookName, setBookName] = useState(t("noBook"));
+    const contentEditableRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Setup listener for messages from SwiftUI
@@ -169,6 +170,13 @@ export default function LexicalEditor({
 
     const handleTagsChange = useCallback((newTags: string[]) => {
         setTags(newTags);
+    }, []);
+
+    const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            contentEditableRef.current?.focus();
+        }
     }, []);
 
     const initialConfig = {
@@ -242,8 +250,10 @@ export default function LexicalEditor({
                                             type="text"
                                             placeholder={t("title")}
                                             onChange={() => {}}
+                                            onKeyDown={handleTitleKeyDown}
                                         />
                                         <ContentEditable
+                                            ref={contentEditableRef}
                                             className="w-full text-base leading-6 text-gray-800 bg-transparent border-none outline-none resize-none select-text break-words"
                                             aria-placeholder={placeholder}
                                             placeholder={

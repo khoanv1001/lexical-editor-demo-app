@@ -19,7 +19,10 @@ import {
     COMMAND_PRIORITY_CRITICAL,
     COMMAND_PRIORITY_LOW,
     FORMAT_TEXT_COMMAND,
+    KEY_ENTER_COMMAND,
     SELECTION_CHANGE_COMMAND,
+    TEXT_TYPE_TO_FORMAT,
+    TextNode,
     UNDO_COMMAND,
     type LexicalEditor,
     type LexicalNode,
@@ -245,6 +248,31 @@ export default function ToolbarPlugin({
                 CAN_UNDO_COMMAND,
                 (payload) => {
                     updateToolbarState("canUndo", payload);
+                    return false;
+                },
+                COMMAND_PRIORITY_CRITICAL
+            ),
+            editor.registerCommand(
+                KEY_ENTER_COMMAND,
+                (_: KeyboardEvent | null) => {
+                    editor.update(() => {
+                        const selection = $getSelection();
+                        if (selection && selection.isCollapsed()) {
+                            const [anchorOffset, _] = $getCharacterOffsets(selection);
+                            const textNode = selection.getNodes()[0];
+                            if (
+                                textNode instanceof TextNode &&
+                                textNode.getTextContentSize() == anchorOffset
+                            ) {
+                                if (textNode.getFormat() == TEXT_TYPE_TO_FORMAT["bold"]) {
+                                    editor.dispatchCommand(FORMAT_TEXT_COMMAND,"bold");
+                                }
+                                if (textNode.getFormat() == TEXT_TYPE_TO_FORMAT["strikethrough"]) {
+                                    editor.dispatchCommand(FORMAT_TEXT_COMMAND,"strikethrough");
+                                }
+                            }
+                        }
+                    });
                     return false;
                 },
                 COMMAND_PRIORITY_CRITICAL
